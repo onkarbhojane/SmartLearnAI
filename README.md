@@ -41,77 +41,6 @@
 <tr>
 <td width="50%">
 
-### 📚 Smart PDF Management
-- ✅ Upload and manage multiple PDF coursebooks
-- ✅ Interactive PDF viewer with side-by-side chat
-- ✅ Pre-loaded NCERT Class XI Physics PDFs
-- ✅ Seamless document switching
-- ✅ Cloud storage with Cloudinary
-- ✅ Support for large files (up to 50MB)
-
-</td>
-<td width="50%">
-
-### 🤖 AI-Powered Chat
-- ✅ RAG-based answers with precise citations
-- ✅ Page numbers and text snippets for verification
-- ✅ Context-aware responses from your PDFs
-- ✅ ChatGPT-inspired intuitive interface
-- ✅ Chat history persistence
-- ✅ Real-time streaming responses
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 📝 Intelligent Quiz Engine
-- ✅ Auto-generate MCQs, SAQs, and LAQs
-- ✅ Instant scoring with detailed explanations
-- ✅ Adaptive difficulty levels
-- ✅ Unlimited practice sets
-- ✅ Timed quiz mode
-- ✅ Performance analytics
-
-</td>
-<td width="50%">
-
-### 📊 Progress Tracking
-- ✅ Visualize your learning journey
-- ✅ Identify strengths and weaknesses
-- ✅ Topic-wise performance analytics
-- ✅ Personalized study recommendations
-- ✅ Historical performance graphs
-- ✅ Achievement badges
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🔐 Authentication & Security
-- ✅ JWT-based authentication
-- ✅ Secure password hashing
-- ✅ Access & refresh token mechanism
-- ✅ Protected routes
-- ✅ Session management
-- ✅ Email verification (optional)
-
-</td>
-<td width="50%">
-
-### 🎨 Modern UI/UX
-- ✅ Responsive design for all devices
-- ✅ Dark mode support (coming soon)
-- ✅ Smooth animations with Framer Motion
-- ✅ TailwindCSS utility classes
-- ✅ Intuitive navigation
-- ✅ Accessibility features
-
-</td>
-</tr>
-</table>
-
 ---
 
 ## 🎯 Why SmartRevision?
@@ -143,6 +72,7 @@ Traditional Study          →          SmartRevision
 <div align="center">
 
 ### Frontend Technologies
+
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -150,18 +80,21 @@ Traditional Study          →          SmartRevision
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
 
 ### Backend Technologies
+
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![Express](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens&logoColor=white)
 
 ### AI & Cloud Services
+
 ![Gemini](https://img.shields.io/badge/Gemini_2.0-8E75B2?style=for-the-badge&logo=google&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
 ![Pinecone](https://img.shields.io/badge/Pinecone-000000?style=for-the-badge&logo=pinecone&logoColor=white)
 ![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
 
 ### Additional Tools
+
 ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
 ![Multer](https://img.shields.io/badge/Multer-FF6C37?style=for-the-badge&logo=multer&logoColor=white)
 ![PDF.js](https://img.shields.io/badge/PDF.js-FF0000?style=for-the-badge&logo=adobe&logoColor=white)
@@ -186,12 +119,14 @@ Before you begin, ensure you have the following installed:
 ### 📦 Installation
 
 **Step 1: Clone the repository**
+
 ```bash
 git clone https://github.com/onkarbhojane/SmartRevision.git
 cd SmartRevision
 ```
 
 **Step 2: Backend Setup**
+
 ```bash
 cd backend
 npm install
@@ -246,6 +181,7 @@ FRONTEND_URL=http://localhost:5173
 ```
 
 **Step 4: Start Backend Server**
+
 ```bash
 # Development mode with auto-reload
 npm run dev
@@ -254,9 +190,10 @@ npm run dev
 npm start
 ```
 
-✅ Backend server should be running on `http://localhost:5000`
+✅ Backend server should be running on `https://smartrevision.onrender.com`
 
 **Step 5: Frontend Setup** *(Open a new terminal)*
+
 ```bash
 cd ../frontend
 npm install
@@ -267,11 +204,12 @@ npm install
 Create `.env` in the `frontend` directory if you need custom configuration:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=https://smartrevision.onrender.com/api
 VITE_APP_NAME=SmartRevision
 ```
 
 **Step 7: Start Frontend Development Server**
+
 ```bash
 npm run dev
 ```
@@ -289,6 +227,7 @@ Open your browser and navigate to `http://localhost:5173` to see SmartRevision i
 ### 🎯 Getting Started
 
 #### 1. **Create Your Account**
+
 ```
 → Click "Sign Up" on the homepage
 → Enter your details (name, email, password)
@@ -297,6 +236,7 @@ Open your browser and navigate to `http://localhost:5173` to see SmartRevision i
 ```
 
 #### 2. **Upload Your First PDF**
+
 ```
 → Navigate to "Documents" or "Upload PDF"
 → Click "Upload" button
@@ -306,6 +246,7 @@ Open your browser and navigate to `http://localhost:5173` to see SmartRevision i
 ```
 
 #### 3. **Start Learning**
+
 ```
 → Select a PDF from your library
 → Choose between Chat, Quiz, or Study modes
@@ -328,6 +269,7 @@ The AI chat interface provides intelligent, context-aware responses with citatio
 ```
 
 **Response Format:**
+
 ```
 📚 According to page 23: "Force equals mass times acceleration (F = ma). 
    This fundamental principle describes the relationship between force, 
@@ -341,25 +283,26 @@ The AI chat interface provides intelligent, context-aware responses with citatio
 #### Step-by-Step Guide:
 
 1. **Select PDF Source**
+
    - Choose "All PDFs" for mixed content
    - Select specific PDF for focused practice
-
 2. **Choose Question Type**
+
    - 📊 **MCQ** (Multiple Choice Questions) - 4 options, 1 correct
    - ✍️ **SAQ** (Short Answer Questions) - Brief explanations
    - 📄 **LAQ** (Long Answer Questions) - Detailed responses
-
 3. **Configure Quiz**
+
    - Number of questions (5-50)
    - Difficulty level (Easy/Medium/Hard)
    - Time limit (optional)
-
 4. **Take Quiz**
+
    - Read questions carefully
    - Submit your answers
    - Get instant feedback
-
 5. **Review Results**
+
    - View score and percentage
    - Read detailed explanations
    - Identify areas for improvement
@@ -543,13 +486,15 @@ SmartRevision/
 ## 🔧 API Documentation
 
 ### Base URL
+
 ```
-http://localhost:5000/api
+https://smartrevision.onrender.com/api
 ```
 
 ### Authentication Endpoints
 
 #### Register User
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -571,6 +516,7 @@ Response: {
 ```
 
 #### Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -593,6 +539,7 @@ Response: {
 ### PDF Management Endpoints
 
 #### Upload PDF
+
 ```http
 POST /api/pdf/upload
 Authorization: Bearer <access_token>
@@ -614,6 +561,7 @@ Response: {
 ```
 
 #### Get All PDFs
+
 ```http
 GET /api/pdf/getDat
 Authorization: Bearer <access_token>
@@ -635,6 +583,7 @@ Response: {
 ### Chat Endpoints
 
 #### Send Message
+
 ```http
 POST /api/chat/:documentId
 Authorization: Bearer <access_token>
@@ -659,6 +608,7 @@ Response: {
 ### Quiz Endpoints
 
 #### Generate Quiz
+
 ```http
 POST /api/quiz/generate
 Authorization: Bearer <access_token>
@@ -681,6 +631,7 @@ Response: {
 ```
 
 #### Submit Quiz
+
 ```http
 POST /api/quiz/:documentId
 Authorization: Bearer <access_token>
@@ -756,6 +707,7 @@ Powered by cutting-edge AI models:
 <div align="center">
 
 ### 🏠 Home Page
+<<<<<<< HEAD
 <img width="1906" height="916" alt="image" src="https://github.com/user-attachments/assets/be39b185-2269-4a45-ae11-d6a490a27a61" />
 
 ### 💬 Chat Interface
@@ -771,6 +723,22 @@ Powered by cutting-edge AI models:
 ### 📊 Dashboard Analytics
 <img width="1874" height="902" alt="image" src="https://github.com/user-attachments/assets/857d2e7c-6ac1-4aa2-83e4-f6c0bcb5c26d" />
 
+=======
+
+![Home Page](https://via.placeholder.com/800x450/6366f1/ffffff?text=Home+Page)
+
+### 💬 Chat Interface
+
+![Chat Interface](https://via.placeholder.com/800x450/10b981/ffffff?text=Chat+Interface)
+
+### 📝 Quiz Taking
+
+![Quiz Interface](https://via.placeholder.com/800x450/f59e0b/ffffff?text=Quiz+Interface)
+
+### 📊 Dashboard Analytics
+
+![Dashboard](https://via.placeholder.com/800x450/8b5cf6/ffffff?text=Dashboard+Analytics)
+>>>>>>> 2d95e9c (readme)
 
 </div>
 
@@ -779,15 +747,17 @@ Powered by cutting-edge AI models:
 ## 🔮 Roadmap
 
 ### 🎯 Phase 1 - Core Features (Completed ✅)
-- [x] User authentication and authorization
-- [x] PDF upload and management
-- [x] RAG-based chat with citations
-- [x] Quiz generation (MCQ, SAQ, LAQ)
-- [x] Basic progress tracking
-- [x] Responsive UI
+
+- [X] User authentication and authorization
+- [X] PDF upload and management
+- [X] RAG-based chat with citations
+- [X] Quiz generation (MCQ, SAQ, LAQ)
+- [X] Basic progress tracking
+- [X] Responsive UI
 
 ### 🚀 Phase 2 - Enhanced Features (In Progress 🔄)
-- [x] Advanced analytics dashboard
+
+- [X] Advanced analytics dashboard
 - [ ] YouTube video recommendations
 - [ ] Topic-based PDF filtering
 - [ ] Collaborative study sessions
@@ -795,6 +765,7 @@ Powered by cutting-edge AI models:
 - [ ] Export quiz results as PDF
 
 ### 🌟 Phase 3 - Advanced Features (Planned 📅)
+
 - [ ] Dark mode support
 - [ ] Multi-language support (Hindi, Spanish, etc.)
 - [ ] Voice input for questions
@@ -803,6 +774,7 @@ Powered by cutting-edge AI models:
 - [ ] Mobile app (React Native)
 
 ### 🎨 Phase 4 - Innovations (Future 🔮)
+
 - [ ] AR/VR study environments
 - [ ] Personalized AI tutor
 - [ ] Gamification and achievements
@@ -819,36 +791,38 @@ We love contributions! SmartRevision is an open-source project and we welcome co
 ### How to Contribute
 
 1. **🍴 Fork the Repository**
+
    ```bash
    # Click the 'Fork' button on GitHub
    ```
-
 2. **📥 Clone Your Fork**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/SmartRevision.git
    cd SmartRevision
    ```
-
 3. **🌿 Create a Branch**
+
    ```bash
    git checkout -b feature/amazing-feature
    # or
    git checkout -b bugfix/fix-issue
    ```
-
 4. **✍️ Make Your Changes**
+
    - Write clean, documented code
    - Follow existing code style
    - Add tests if applicable
    - Update documentation
-
 5. **✅ Commit Your Changes**
+
    ```bash
    git add .
    git commit -m "Add: Amazing new feature"
    ```
 
    **Commit Message Convention:**
+
    - `Add:` New features
    - `Fix:` Bug fixes
    - `Update:` Updates to existing features
@@ -856,13 +830,13 @@ We love contributions! SmartRevision is an open-source project and we welcome co
    - `Style:` Code style/formatting changes
    - `Refactor:` Code refactoring
    - `Test:` Adding or updating tests
-
 6. **📤 Push to Your Fork**
+
    ```bash
    git push origin feature/amazing-feature
    ```
-
 7. **🔀 Open a Pull Request**
+
    - Go to the original repository
    - Click "New Pull Request"
    - Select your branch
@@ -894,38 +868,50 @@ We love contributions! SmartRevision is an open-source project and we welcome co
 ### Common Issues and Solutions
 
 #### 1. MongoDB Connection Error
+
 ```
 Error: MongoNetworkError: failed to connect to server
 ```
+
 **Solution:**
+
 - Ensure MongoDB is running: `mongod --version`
 - Check `MONGO_URI` in `.env` file
 - Verify network connectivity
 
 #### 2. Pinecone API Error
+
 ```
 Error: Pinecone API key invalid
 ```
+
 **Solution:**
+
 - Verify `PINECONE_API_KEY` in `.env`
 - Check Pinecone dashboard for correct API key
 - Ensure index name matches configuration
 
 #### 3. PDF Upload Fails
+
 ```
 Error: File too large or unsupported format
 ```
+
 **Solution:**
+
 - Check file size (max 50MB)
 - Ensure file is a valid PDF
 - Clear browser cache
 - Check Cloudinary quota
 
 #### 4. Frontend Not Loading
+
 ```
 Error: Cannot GET /
 ```
+
 **Solution:**
+
 ```bash
 cd frontend
 rm -rf node_modules package-lock.json
@@ -934,19 +920,25 @@ npm run dev
 ```
 
 #### 5. JWT Token Expired
+
 ```
 Error: 401 Unauthorized
 ```
+
 **Solution:**
+
 - Log out and log in again
 - Check `ACCESS_TOKEN_EXPIRY` in `.env`
 - Clear browser cookies
 
 #### 6. Quiz Generation Fails
+
 ```
 Error: Failed to generate quiz
 ```
+
 **Solution:**
+
 - Ensure PDF is fully processed
 - Check Gemini API key validity
 - Verify API quota limits
@@ -964,6 +956,7 @@ If you encounter issues not listed here:
 
 ## 📊 Performance Benchmarks
 
+<<<<<<< HEAD
 | Feature         | Metric               | Performance    |
 | --------------- | -------------------- | -------------- |
 | PDF Upload      | Time (10MB file)     | ~1-2 minutes   |
@@ -985,3 +978,8 @@ If you encounter issues not listed here:
 This project is licensed under the **ISC License**.  
 See the [LICENSE](LICENSE) file for more details.
 
+=======
+| Feature    | Metric | Performance |
+| ---------- | ------ | ----------- |
+| PDF Upload |        |             |
+>>>>>>> 2d95e9c (readme)
