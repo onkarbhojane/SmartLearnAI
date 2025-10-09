@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import { generateQuizService } from "../services/quizService.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 /**
  * 🧠 Helper: Format quiz questions based on type
  */
@@ -74,16 +76,16 @@ export const getDashboardData = async (req, res) => {
     const recentActivities = [];
 
     // Process each study material
-    user.study_materials.forEach(material => {
+    user.study_materials.forEach((material) => {
       // Count chat sessions
       totalChatSessions += material.chat_sessions?.length || 0;
 
       // Process quizzes
-      material.quizzes?.forEach(quiz => {
+      material.quizzes?.forEach((quiz) => {
         if (quiz.isAttempted) {
           totalQuizzesAttempted++;
           totalScore += quiz.score || 0;
-          
+
           // Add to recent activities
           recentActivities.push({
             id: quiz._id,
@@ -91,7 +93,7 @@ export const getDashboardData = async (req, res) => {
             title: `Quiz: ${material.title}`,
             score: `${quiz.score}%`,
             time: quiz.attemptedAt,
-            documentId: material._id
+            documentId: material._id,
           });
         }
       });
@@ -105,7 +107,7 @@ export const getDashboardData = async (req, res) => {
       });
 
       // Add chat sessions as activities
-      material.chat_sessions?.forEach(session => {
+      material.chat_sessions?.forEach((session) => {
         recentActivities.push({
           id: session._id,
           type: "chat",
@@ -116,7 +118,10 @@ export const getDashboardData = async (req, res) => {
     });
 
     // Calculate average score
-    const averageScore = totalQuizzesAttempted > 0 ? Math.round(totalScore / totalQuizzesAttempted) : 0;
+    const averageScore =
+      totalQuizzesAttempted > 0
+        ? Math.round(totalScore / totalQuizzesAttempted)
+        : 0;
 
     // Sort recent activities by time (newest first) and limit to 6
     const sortedActivities = recentActivities
@@ -128,7 +133,7 @@ export const getDashboardData = async (req, res) => {
       data: {
         user: {
           name: user.name,
-          email: user.email_id
+          email: user.email_id,
         },
         stats: {
           totalQuizzesAttempted,
@@ -136,11 +141,11 @@ export const getDashboardData = async (req, res) => {
           totalStudyMaterials,
           totalChatSessions,
           strengths: user.progress?.strengths || [],
-          weaknesses: user.progress?.weaknesses || []
+          weaknesses: user.progress?.weaknesses || [],
         },
         study_materials: user.study_materials,
-        recentActivities: sortedActivities
-      }
+        recentActivities: sortedActivities,
+      },
     });
   } catch (err) {
     console.error("❌ getDashboardData error:", err);
@@ -192,7 +197,12 @@ export const generateQuiz = async (req, res) => {
     const userId = req.user.id;
 
     // Generate quiz content using your service
-    const quizData = await generateQuizService(userId, documentId, quizType, numQuestions);
+    const quizData = await generateQuizService(
+      userId,
+      documentId,
+      quizType,
+      numQuestions
+    );
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -236,8 +246,7 @@ export const saveQuizAttempt = async (req, res) => {
     const { documentId, quizId } = req.params;
     const { answers, score } = req.body;
     const userId = req.user.id;
-
-    if (!answers || typeof score !== "number") {
+    if (!answers || (typeof score !== "number" && answers.length === 0)) {
       return res.status(400).json({ message: "Invalid answers or score" });
     }
 
@@ -247,34 +256,95 @@ export const saveQuizAttempt = async (req, res) => {
     const pdf = user.study_materials.id(documentId);
     if (!pdf) return res.status(404).json({ message: "Document not found" });
 
-    // Find the quiz to update
     const quiz = pdf.quizzes.id(quizId);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
-    // Update quiz attempt
+    if (quiz.quizType === "saq" || quiz.quizType === "laq") {
+      console.log(
+        `🔍 Evaluating ${quiz.quizType.toUpperCase()} answers using Gemini...`
+      );
+
+      for (let i = 0; i < answers.length; i++) {
+        const userAnswer = answers[i].userAnswer?.trim();
+        const correctAnswer = quiz.answers[i].correctAnswer?.trim();
+
+        if (!userAnswer) continue;
+
+        const prompt = `
+Evaluate the student's answer for a ${quiz.quizType.toUpperCase()} question.
+
+Question: "${quiz.answers[i].question}"
+Expected Answer: "${correctAnswer}"
+Student's Answer: "${userAnswer}"
+
+Respond ONLY in JSON:
+{
+  "isCorrect": true or false,
+  "similarity": a number from 0 to 100,
+  "feedback": "short feedback to student"
+}
+        `;
+
+        try {
+          const response = await genAI.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          });
+
+          const text = response.response.text();
+          const match = text.match(/\{[\s\S]*\}/);
+          const aiResponse = match ? JSON.parse(match[0]) : null;
+
+          if (aiResponse) {
+            answers[i].isCorrect = aiResponse.isCorrect;
+            answers[i].feedback = aiResponse.feedback;
+            answers[i].similarity = aiResponse.similarity;
+          } else {
+            answers[i].isCorrect = false;
+            answers[i].feedback = "Could not evaluate with AI.";
+            answers[i].similarity = 0;
+          }
+        } catch (e) {
+          console.error(
+            `⚠️ Gemini evaluation failed for question ${i + 1}:`,
+            e.message
+          );
+          answers[i].isCorrect = false;
+          answers[i].feedback = "Evaluation error.";
+          answers[i].similarity = 0;
+        }
+      }
+
+      // Recalculate score for SAQ/LAQ
+      const correctCount = answers.filter((a) => a.isCorrect).length;
+      quiz.score = Math.round((correctCount / answers.length) * 100);
+    } else {
+      // For MCQ, use provided score
+      quiz.score = score;
+    }
+
+    // ✅ Update quiz answers and metadata
     quiz.answers = answers.map((a) => ({
       ...a,
       isAttempted: true,
     }));
-    quiz.score = score;
     quiz.attemptedAt = new Date();
     quiz.isAttempted = true;
 
-    // ✅ Update progress stats
+    // ✅ Update user progress
     const totalPrevQuizzes = user.progress.totalQuizzes || 0;
     const prevAvg = user.progress.averageScore || 0;
 
-    // New average = ((oldAverage * count) + newScore) / (count + 1)
     const newTotal = totalPrevQuizzes + 1;
-    const newAvg = ((prevAvg * totalPrevQuizzes) + score) / newTotal;
+    const newAvg = (prevAvg * totalPrevQuizzes + quiz.score) / newTotal;
 
     user.progress.totalQuizzes = newTotal;
     user.progress.averageScore = parseFloat(newAvg.toFixed(2));
-
+    console.log("quiz saved ")
     await user.save();
 
     return res.status(200).json({
-      message: "✅ Quiz attempt saved successfully",
+      message: "✅ Quiz attempt saved and evaluated successfully",
       quiz,
       progress: user.progress,
     });
@@ -286,7 +356,6 @@ export const saveQuizAttempt = async (req, res) => {
     });
   }
 };
-
 
 /**
  * 4️⃣ Get all quizzes for a specific document
