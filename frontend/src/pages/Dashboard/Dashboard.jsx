@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../hooks/useTheme";
 import { motion } from "framer-motion";
-
+import axios from "axios";
 export const Dashboard = () => {
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
@@ -16,13 +16,10 @@ export const Dashboard = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("accessToken");
-        
-        console.log("Fetching dashboard data for user:", user);
-        
-        const response = await fetch(
-          `https://smartrevision.onrender.com/api/quizzes/dashboard`,
+
+        const response = await axios.get(
+          "https://smartrevision.onrender.com/api/quizzes/dashboard",
           {
-            method: "GET",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
@@ -30,14 +27,13 @@ export const Dashboard = () => {
           }
         );
 
-        if (!response.ok) {
+        if (response.status !== 200) {
           throw new Error(`Failed to fetch dashboard data: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log("Dashboard data fetched:", data);
-        
-        setDashboardData(data.data);
+        const data = response;
+
+        setDashboardData(data.data.data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         // Fallback to minimal data structure if API fails
@@ -49,10 +45,10 @@ export const Dashboard = () => {
             totalStudyMaterials: 0,
             totalChatSessions: 0,
             strengths: [],
-            weaknesses: []
+            weaknesses: [],
           },
           study_materials: [],
-          recentActivities: []
+          recentActivities: [],
         });
       } finally {
         setLoading(false);
@@ -78,7 +74,7 @@ export const Dashboard = () => {
     },
     {
       name: "Average Score",
-      value: dashboardData?.stats?.averageScore 
+      value: dashboardData?.stats?.averageScore
         ? `${dashboardData.stats.averageScore}%`
         : "0%",
       change: "+0%",
@@ -107,23 +103,24 @@ export const Dashboard = () => {
     },
   ];
 
-  const recentActivities = dashboardData?.recentActivities?.length > 0 
-    ? dashboardData.recentActivities.slice(0, 4)
-    : [
-        {
-          id: 1,
-          type: "quiz",
-          title: "No recent activity",
-          score: "0%",
-          time: "Get started!",
-        },
-        {
-          id: 2,
-          type: "document",
-          title: "Upload your first document",
-          time: "Click to begin",
-        }
-      ];
+  const recentActivities =
+    dashboardData?.recentActivities?.length > 0
+      ? dashboardData.recentActivities.slice(0, 4)
+      : [
+          {
+            id: 1,
+            type: "quiz",
+            title: "No recent activity",
+            score: "0%",
+            time: "Get started!",
+          },
+          {
+            id: 2,
+            type: "document",
+            title: "Upload your first document",
+            time: "Click to begin",
+          },
+        ];
 
   const quickActions = [
     {
@@ -136,7 +133,10 @@ export const Dashboard = () => {
       title: "Generate Quiz",
       description: "Test your knowledge",
       icon: "🎯",
-      link: dashboardData?.study_materials?.length > 0 ? "/study?tab=quiz" : "/documents",
+      link:
+        dashboardData?.study_materials?.length > 0
+          ? "/study?tab=quiz"
+          : "/documents",
     },
     {
       title: "View Progress",
@@ -152,12 +152,14 @@ export const Dashboard = () => {
   };
 
   const getInitials = (name) => {
-    return name
-      ?.split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "U";
+    return (
+      name
+        ?.split(" ")
+        .map((word) => word[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U"
+    );
   };
 
   const getColorClasses = (color) => {
@@ -189,7 +191,9 @@ export const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="text-lg text-gray-600 dark:text-gray-400">Loading your dashboard...</div>
+        <div className="text-lg text-gray-600 dark:text-gray-400">
+          Loading your dashboard...
+        </div>
       </div>
     );
   }
@@ -199,10 +203,11 @@ export const Dashboard = () => {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl p-6 text-white">
         <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {dashboardData?.user?.name || user?.name || "Student"}! 👋
+          Welcome back, {dashboardData?.user?.name || user?.name || "Student"}!
+          👋
         </h1>
         <p className="text-blue-100 text-lg">
-          {dashboardData?.study_materials?.length > 0 
+          {dashboardData?.study_materials?.length > 0
             ? "Ready to continue your learning journey? You're making great progress!"
             : "Get started by uploading your first study material!"}
         </p>
@@ -371,18 +376,22 @@ export const Dashboard = () => {
               <span className="text-xl">📚</span>
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              {dashboardData?.study_materials?.length > 0 ? "Continue Studying" : "Start Studying"}
+              {dashboardData?.study_materials?.length > 0
+                ? "Continue Studying"
+                : "Start Studying"}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              {dashboardData?.study_materials?.length > 0 
-                ? `You have ${dashboardData.study_materials.length} study material${dashboardData.study_materials.length > 1 ? 's' : ''}`
+              {dashboardData?.study_materials?.length > 0
+                ? `You have ${dashboardData.study_materials.length} study material${dashboardData.study_materials.length > 1 ? "s" : ""}`
                 : "Upload your first document to begin"}
             </p>
             <Link
-              to={`/study/${dashboardData.study_materials[0]._id}`}
+              to={dashboardData?.study_materials?.length > 0 ? `/study/${dashboardData.study_materials[0]?._id}`: "/documents"}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors inline-block text-center"
             >
-              {dashboardData?.study_materials?.length > 0 ? "Resume Study" : "Get Started"}
+              {dashboardData?.study_materials?.length > 0
+                ? "Resume Study"
+                : "Get Started"}
             </Link>
           </motion.div>
 
@@ -397,15 +406,21 @@ export const Dashboard = () => {
               Practice Quiz
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              {dashboardData?.study_materials?.length > 0 
+              {dashboardData?.study_materials?.length > 0
                 ? "Test your knowledge on your materials"
                 : "Upload documents to generate quizzes"}
             </p>
             <Link
-              to={dashboardData?.study_materials?.length > 0 ? "/documents" : "/documents"}
+              to={
+                dashboardData?.study_materials?.length > 0
+                  ? "/documents"
+                  : "/documents"
+              }
               className="w-full bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors inline-block text-center"
             >
-              {dashboardData?.study_materials?.length > 0 ? "Start Quiz" : "Upload First"}
+              {dashboardData?.study_materials?.length > 0
+                ? "Start Quiz"
+                : "Upload First"}
             </Link>
           </motion.div>
 
@@ -420,8 +435,8 @@ export const Dashboard = () => {
               Focus Areas
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              {dashboardData?.stats?.weaknesses?.length > 0 
-                ? `Focus on ${dashboardData.stats.weaknesses.slice(0, 2).join(' and ')}`
+              {dashboardData?.stats?.weaknesses?.length > 0
+                ? `Focus on ${dashboardData.stats.weaknesses.slice(0, 2).join(" and ")}`
                 : "Complete quizzes to identify weak areas"}
             </p>
             <Link
@@ -435,50 +450,54 @@ export const Dashboard = () => {
       </div>
 
       {/* User Study Materials Preview */}
-      {dashboardData?.study_materials && dashboardData.study_materials.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Your Study Materials
-            </h2>
-            <Link
-              to="/documents"
-              className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-            >
-              View all
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {dashboardData.study_materials.slice(0, 3).map((material, index) => (
-              <motion.div
-                key={material._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+      {dashboardData?.study_materials &&
+        dashboardData.study_materials.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Your Study Materials
+              </h2>
+              <Link
+                to="/documents"
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
               >
-                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mb-3">
-                  <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                    PDF
-                  </span>
-                </div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 truncate">
-                  {material.title}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  Uploaded {new Date(material.uploadedAt).toLocaleDateString()}
-                </p>
-                <Link
-                  to={`/study/${material._id}`}
-                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors inline-block text-center"
-                >
-                  Study Now
-                </Link>
-              </motion.div>
-            ))}
+                View all
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {dashboardData.study_materials
+                .slice(0, 3)
+                .map((material, index) => (
+                  <motion.div
+                    key={material._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:border-blue-500 dark:hover:border-blue-400 transition-colors"
+                  >
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mb-3">
+                      <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                        PDF
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 truncate">
+                      {material.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Uploaded{" "}
+                      {new Date(material.uploadedAt).toLocaleDateString()}
+                    </p>
+                    <Link
+                      to={`/study/${material._id}`}
+                      className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors inline-block text-center"
+                    >
+                      Study Now
+                    </Link>
+                  </motion.div>
+                ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };

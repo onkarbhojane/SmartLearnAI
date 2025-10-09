@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProgressChart } from './ProgressChart';
 import { ReviewModal } from './ReviewModal';
@@ -189,7 +189,7 @@ export const Progress = () => {
 
   const handleStudyMaterials = () => {
     console.log("View study materials");
-    navigate('/materials');
+    navigate(`/documents`);
   };
 
   if (loading) {
