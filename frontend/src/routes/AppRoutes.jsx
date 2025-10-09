@@ -12,7 +12,6 @@ import Landing from "../pages/Landing/Landing";
 import { ForgotPassword } from "../pages/Auth/ForgotPassword";
 import { ResetPassword } from "../pages/Auth/ResetPassword";
 import { Profile } from "../pages/Profile/Profile";
-import Document from "./../../../backend/models/document.model";
 import { QuizzesPage } from "../pages/Quizes/QuizzesPage";
 import { QuizAttempt } from "../components/quiz/QuizAttempt/QuizAttempt";
 const ProtectedRoute = ({ children }) => {
