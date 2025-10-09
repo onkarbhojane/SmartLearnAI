@@ -4,11 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../hooks/useTheme';
 import { motion } from 'framer-motion';
 
-// Mock service for document operations (replace with actual API calls)
+// Mock service for document operations
 const documentService = {
   async uploadDocument(formData, token) {
-    // Simulate API call to upload PDF
-    console.log('Uploading document:', formData);
     const response = await fetch('http://localhost:5000/api/documents/upload', {
       method: 'POST',
       headers: {
@@ -16,12 +14,10 @@ const documentService = {
       },
       body: formData,
     });
-    console.log(response,"sabdclkbsadjkhb");
     return await response.json();
   },
 
   async getUserDocuments(token) {
-    // Simulate API call to get user documents
     const response = await fetch('http://localhost:5000/api/documents/getData', {
       method: 'GET',
       headers: {
@@ -33,7 +29,6 @@ const documentService = {
   },
 
   async deleteDocument(documentId, token) {
-    // Simulate API call to delete document
     const response = await fetch(`http://localhost:5000/api/documents/${documentId}`, {
       method: 'DELETE',
       headers: {
@@ -60,11 +55,10 @@ export const Documents = () => {
     try {
       const { accessToken } = getTokens();
       const data = await documentService.getUserDocuments(accessToken);
-      setDocuments(data.documents.study_materials || []);
+      setDocuments(data.documents?.study_materials || []);
     } catch (error) {
       console.error('Error loading documents:', error);
-      // Fallback to sample data if API fails
-      setDocuments(sampleDocuments);
+      setDocuments([]); // No sample data - keep it empty
     } finally {
       setLoading(false);
     }
@@ -115,85 +109,136 @@ export const Documents = () => {
     }
   };
 
-  const getDocumentThumbnail = (document) => {
-    // In a real app, you'd generate thumbnails on the backend
-    // For now, using a placeholder based on subject
-    const subjectColors = {
-      Physics: 'from-blue-500 to-cyan-500',
-      Chemistry: 'from-purple-500 to-pink-500',
-      Mathematics: 'from-green-500 to-teal-500',
-      Biology: 'from-red-500 to-orange-500',
-      General: 'from-gray-500 to-gray-700'
+  // Generate beautiful document thumbnails with random academic-themed illustrations
+  const generateDocumentThumbnail = (document, index) => {
+    const subjectIcons = {
+      Physics: ['⚛️', '🔭', '⚡', '🌌'],
+      Chemistry: ['🧪', '🔬', '⚗️', '🌡️'],
+      Mathematics: ['📐', '🔢', '📊', '∞'],
+      Biology: ['🧬', '🔬', '🌿', '🦠'],
+      General: ['📚', '🎓', '📖', '✏️']
     };
 
+    const colorSchemes = [
+      'from-blue-500 to-purple-600',
+      'from-green-500 to-teal-600',
+      'from-orange-500 to-red-600',
+      'from-purple-500 to-pink-600',
+      'from-teal-500 to-blue-600',
+      'from-yellow-500 to-orange-600'
+    ];
+
+    const patterns = [
+      '🔮✨', '🌟📖', '🎯🔍', '💡📚', '🚀🎓', '🌈✏️'
+    ];
+
+    const subject = document.subject || 'General';
+    const icons = subjectIcons[subject] || subjectIcons.General;
+    const colorScheme = colorSchemes[index % colorSchemes.length];
+    const pattern = patterns[index % patterns.length];
+
     return (
-      <div className={`w-full h-32 bg-gradient-to-br ${subjectColors[document.subject] || 'from-blue-500 to-purple-500'} rounded-lg flex items-center justify-center text-white relative overflow-hidden`}>
-        <div className="text-center">
-          <div className="text-2xl mb-1">📄</div>
-          <div className="text-xs font-medium bg-black/20 px-2 py-1 rounded">
-            {document.pages} pages
+      <div className={`w-full h-40 bg-gradient-to-br ${colorScheme} rounded-xl flex items-center justify-center text-white relative overflow-hidden group`}>
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
+          <div className="absolute -top-4 -right-4 text-6xl rotate-12">{pattern}</div>
+          <div className="absolute -bottom-4 -left-4 text-4xl -rotate-12">{pattern}</div>
+        </div>
+        
+        {/* Main content */}
+        <div className="text-center relative z-10 transform group-hover:scale-110 transition-transform">
+          <div className="text-4xl mb-2">{icons[0]}</div>
+          <div className="text-xs font-semibold bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+            {document.pages || '?'} pages • {subject}
           </div>
         </div>
-        <div className="absolute inset-0 bg-black/10"></div>
+
+        {/* Shine effect on hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
       </div>
     );
   };
 
+  // Loading skeleton
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Documents</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your course materials and study resources</p>
+            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64 animate-pulse"></div>
           </div>
+          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg w-40 mt-4 sm:mt-0 animate-pulse"></div>
         </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 animate-pulse">
+              <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-xl mb-4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+              <div className="flex space-x-2">
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex-1"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-10"></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-8">
+      {/* Enhanced Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-black">My Documents</h1>
-          <p className="text-black dark:text-black">
-            {documents.length} document{documents.length !== 1 ? 's' : ''} • Continue your learning journey
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            My Learning Library
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">
+            {documents.length === 0 
+              ? "Transform your PDFs into interactive learning experiences" 
+              : `You have ${documents.length} document${documents.length !== 1 ? 's' : ''} ready to explore`}
           </p>
         </div>
         
         <motion.button
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.05, boxShadow: "0 10px 30px -10px rgba(59, 130, 246, 0.5)" }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowUpload(true)}
-          className="mt-2 sm:mt-0 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all flex items-center space-x-2"
+          className="mt-4 sm:mt-0 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-xl transition-all flex items-center space-x-3 group"
         >
-          <span>📄</span>
-          <span>Upload New Document</span>
+          <span className="text-xl group-hover:scale-110 transition-transform">📚</span>
+          <span className="text-lg">Upload New Document</span>
         </motion.button>
-      </div>
+      </motion.div>
 
-      {/* Upload Modal */}
+      {/* Enhanced Upload Modal */}
       {showUpload && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-2xl"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-900 rounded-3xl p-8 w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-2xl"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Upload Document</h3>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Upload Learning Material</h3>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">Turn your PDF into an interactive study session</p>
+              </div>
               <button
-                onClick={() => setShowUpload(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2"
+                onClick={() => !uploading && setShowUpload(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
                 disabled={uploading}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,13 +247,19 @@ export const Documents = () => {
               </button>
             </div>
             
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📄</span>
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              className="border-3 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-12 text-center bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 transition-all cursor-pointer group"
+              onClick={() => !uploading && document.getElementById('pdf-upload')?.click()}
+            >
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                <span className="text-3xl">📄</span>
               </div>
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Upload PDF Document</h4>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Drag and drop your PDF file here, or click to browse
+              <h4 className="font-bold text-2xl text-gray-900 dark:text-white mb-3">
+                Drop your study material here
+              </h4>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-lg">
+                Upload PDFs, notes, or textbooks to create interactive learning experiences
               </p>
               <input
                 type="file"
@@ -219,228 +270,235 @@ export const Documents = () => {
                 id="pdf-upload"
                 disabled={uploading}
               />
-              <label
+              <motion.label
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 htmlFor="pdf-upload"
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 text-lg"
               >
                 {uploading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Uploading...
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    Processing your document...
                   </>
                 ) : (
-                  'Choose Files'
+                  <>
+                    <span className="mr-2">🎯</span>
+                    Choose Files to Upload
+                  </>
                 )}
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                Maximum file size: 50MB • Supported format: PDF
+              </motion.label>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                Supported format: PDF • Max size: 50MB
               </p>
-            </div>
+            </motion.div>
 
-            {/* Upload Progress */}
-            {uploading && (
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Processing your document...
-                    </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      AI is analyzing the content for better learning experience
-                    </p>
+            {/* Upload Features */}
+            {!uploading && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="grid grid-cols-3 gap-4 mt-8"
+              >
+                {[
+                  { icon: '🤖', text: 'AI Analysis' },
+                  { icon: '🎯', text: 'Smart Quizzes' },
+                  { icon: '💬', text: 'Chat Support' }
+                ].map((feature, idx) => (
+                  <div key={idx} className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="text-2xl mb-1">{feature.icon}</div>
+                    <div className="text-sm font-medium text-blue-900 dark:text-blue-100">{feature.text}</div>
                   </div>
-                </div>
-              </div>
+                ))}
+              </motion.div>
             )}
           </motion.div>
         </motion.div>
       )}
 
-      {/* Documents Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {documents.map((document, index) => (
-          <motion.div
-            key={document._id || document.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -5 }}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all group"
-          >
-            {/* Document Thumbnail */}
-            {getDocumentThumbnail(document)}
-            
-            <div className="p-4">
-              {/* Document Info */}
-              <div className="mb-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {document.title || document.name}
-                </h3>
-                
-                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="flex justify-between">
-                    <span>Subject:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{document.subject}</span>
+      {/* Enhanced Documents Grid */}
+      {documents.length > 0 ? (
+        <motion.div 
+          layout
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+        >
+          {documents.map((document, index) => (
+            <motion.div
+              key={document._id}
+              layout
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300 group overflow-hidden"
+            >
+              {/* Enhanced Thumbnail */}
+              {generateDocumentThumbnail(document, index)}
+              
+              <div className="p-6">
+                {/* Document Info */}
+                <div className="mb-6">
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-lg leading-tight">
+                    {document.title || document.name}
+                  </h3>
+                  
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 dark:text-gray-400">Subject</span>
+                      <span className="font-semibold text-gray-900 dark:text-white bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full text-xs">
+                        {document.subject || 'General'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Pages</span>
+                      <span className="font-semibold">{document.pages || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 dark:text-gray-400">Uploaded</span>
+                      <span className="font-semibold">
+                        {new Date(document.uploadedAt || document.uploadDate).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Pages:</span>
-                    <span className="font-medium">{document.pages}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Size:</span>
-                    <span className="font-medium">{document.size}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Uploaded:</span>
-                    <span className="font-medium">
-                      {new Date(document.uploadedAt || document.uploadDate).toLocaleDateString()}
+                </div>
+
+                {/* Engagement Stats */}
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-6">
+                  <div className="flex items-center space-x-4">
+                    <span className="flex items-center space-x-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-full">
+                      <span>🎯</span>
+                      <span>{document.quiz_attempts?.length || 0}</span>
+                    </span>
+                    <span className="flex items-center space-x-1 bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded-full">
+                      <span>💬</span>
+                      <span>{document.chat_sessions?.length || 0}</span>
                     </span>
                   </div>
                 </div>
-              </div>
 
-              {/* Document Stats */}
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500 mb-4">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center space-x-1">
-                    <span>📝</span>
-                    <span>{document.quiz_attempts?.length || 0} quizzes</span>
-                  </span>
-                  <span className="flex items-center space-x-1">
-                    <span>💬</span>
-                    <span>{document.chat_sessions?.length || 0} chats</span>
-                  </span>
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <Link
+                    to={`/study/${document._id}`}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all text-center flex items-center justify-center space-x-2 group"
+                  >
+                    <span className="group-hover:scale-110 transition-transform">📖</span>
+                    <span>Study</span>
+                  </Link>
+                  
+                  <Link
+                    to={`/quizzes/${document._id}`}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-xl font-semibold hover:shadow-lg transition-all text-center flex items-center justify-center space-x-2 group"
+                  >
+                    <span className="group-hover:scale-110 transition-transform">🎯</span>
+                    <span>Quiz</span>
+                  </Link>
+                  
+                  <button 
+                    onClick={() => handleDeleteDocument(document._id)}
+                    className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors group"
+                    title="Delete document"
+                  >
+                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-2">
-                <Link
-                  to={`/study/${document._id || document.id}`}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all text-center flex items-center justify-center space-x-2"
-                >
-                  <span>📖</span>
-                  <span>Study</span>
-                </Link>
-                
-                <button 
-                  onClick={() => handleDeleteDocument(document._id || document.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  title="Delete document"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {documents.length === 0 && (
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        /* Enhanced Empty State */
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-16"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center py-20"
         >
-          <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">📚</span>
-          </div>
-          <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
-            No documents yet
+          <motion.div
+            animate={{ 
+              y: [0, -10, 0],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{ 
+              duration: 4,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl"
+          >
+            <span className="text-5xl">📚</span>
+          </motion.div>
+          
+          <h3 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            Your Learning Journey Starts Here
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-            Upload your first PDF to start your AI-powered learning journey. Get instant explanations, generate quizzes, and track your progress.
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Upload your first PDF and unlock AI-powered learning with instant explanations, 
+            personalized quizzes, and interactive study sessions.
           </p>
+          
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ 
+              scale: 1.05,
+              boxShadow: "0 20px 40px -10px rgba(59, 130, 246, 0.4)"
+            }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowUpload(true)}
-            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all text-lg"
+            className="px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-2xl hover:shadow-xl transition-all text-lg flex items-center space-x-3 mx-auto group"
           >
-            📄 Upload Your First Document
+            <span className="text-2xl group-hover:scale-110 transition-transform">🚀</span>
+            <span>Upload Your First Document</span>
           </motion.button>
-          
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl mx-auto">
+
+          {/* Enhanced Features Grid */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 max-w-5xl mx-auto"
+          >
             {[
               {
                 icon: '🤖',
-                title: 'AI-Powered Learning',
-                description: 'Get instant explanations and personalized guidance from AI tutor'
+                title: 'AI-Powered Analysis',
+                description: 'Get instant explanations and personalized guidance from our intelligent tutor',
+                color: 'from-blue-500 to-cyan-500'
               },
               {
                 icon: '🎯',
-                title: 'Smart Quizzes',
-                description: 'Generate adaptive quizzes based on your study material'
+                title: 'Adaptive Quizzes',
+                description: 'Generate smart quizzes that adapt to your learning pace and progress',
+                color: 'from-purple-500 to-pink-500'
               },
               {
                 icon: '📊',
-                title: 'Progress Tracking',
-                description: 'Monitor your learning journey with detailed analytics'
+                title: 'Progress Analytics',
+                description: 'Track your learning journey with detailed insights and recommendations',
+                color: 'from-green-500 to-teal-500'
               }
             ].map((feature, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-                className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700"
+                transition={{ delay: 0.6 + index * 0.1 }}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all group"
               >
-                <div className="text-3xl mb-3">{feature.icon}</div>
-                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">{feature.title}</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{feature.description}</p>
+                <div className={`w-16 h-16 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <span className="text-2xl">{feature.icon}</span>
+                </div>
+                <h4 className="font-bold text-xl text-gray-900 dark:text-white mb-3">{feature.title}</h4>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </div>
   );
 };
-
-// Sample data for fallback
-const sampleDocuments = [
-  {
-    _id: '1',
-    title: 'Physics Textbook - Class XI',
-    name: 'Physics Textbook - Class XI',
-    size: '2.4 MB',
-    uploadedAt: '2023-09-15',
-    uploadDate: '2023-09-15',
-    pages: 245,
-    subject: 'Physics',
-    class: 'XI',
-    quiz_attempts: [{}, {}],
-    chat_sessions: [{}]
-  },
-  {
-    _id: '2',
-    title: 'Chemistry Notes - Organic Chemistry',
-    name: 'Chemistry Notes - Organic Chemistry',
-    size: '1.8 MB',
-    uploadedAt: '2023-09-20',
-    uploadDate: '2023-09-20',
-    pages: 120,
-    subject: 'Chemistry',
-    class: 'XI',
-    quiz_attempts: [{}],
-    chat_sessions: []
-  },
-  {
-    _id: '3',
-    title: 'Mathematics Guide - Calculus',
-    name: 'Mathematics Guide - Calculus',
-    size: '3.1 MB',
-    uploadedAt: '2023-09-25',
-    uploadDate: '2023-09-25',
-    pages: 180,
-    subject: 'Mathematics',
-    class: 'XI',
-    quiz_attempts: [{}, {}, {}],
-    chat_sessions: [{}]
-  }
-];

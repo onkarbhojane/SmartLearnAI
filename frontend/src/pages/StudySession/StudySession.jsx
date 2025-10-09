@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import PDFViewer from "../../components/pdf/PDFViewer/PDFViewer";
 import { ChatInterface } from "../../components/chat/ChatInterface/ChatInterface";
 import { QuizGenerator } from "../../components/quiz/QuizGenerator/QuizGenerator";
-import { QuizSession } from "../../components/quiz/QuizSession/QuizSession";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import './StudySession.css';
@@ -15,25 +15,25 @@ const TABS = {
 export const StudySession = () => {
   const { documentId } = useParams();
   const { user } = useAuth();
-
   const [activeTab, setActiveTab] = useState(TABS.CHAT);
-  const [currentQuiz, setCurrentQuiz] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedText, setSelectedText] = useState("");
   const [selectedPage, setSelectedPage] = useState(1);
-  const [chatSessionId, setChatSessionId] = useState(null);
   const [showTextPreview, setShowTextPreview] = useState(false);
-  
-  // Ref to control PDF viewer
+  const [recentQuizzes, setRecentQuizzes] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const navigate = useNavigate();
   const pdfViewerRef = useRef(null);
 
-  // Fetch single document from backend
+  // Fetch document data and recent quizzes
   useEffect(() => {
-    const fetchDocument = async () => {
+    const fetchDocumentAndQuizzes = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("accessToken");
+        
+        // Fetch document
         const res = await fetch(
           `http://localhost:5000/api/study/documents/${documentId}`,
           {
@@ -44,10 +44,44 @@ export const StudySession = () => {
             },
           }
         );
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
         const data = await res.json();
         if (data.document) {
           setSelectedDocument(data.document);
           console.log("Fetched document:", data.document);
+
+          // Fetch recent quizzes for this document
+          try {
+            const quizRes = await fetch(
+              `http://localhost:5000/api/quizzes/allquiz/${documentId}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (quizRes.ok) {
+              const quizData = await quizRes.json();
+              // Get all quizzes (both attempted and not attempted), take latest 3
+              const allQuizzes = quizData.quizzes
+                ?.sort((a, b) => new Date(b.createdAt || b.attemptedAt) - new Date(a.createdAt || a.attemptedAt))
+                .slice(0, 3) || [];
+              
+              setRecentQuizzes(allQuizzes);
+              console.log("Fetched recent quizzes:", allQuizzes);
+            }
+          } catch (quizError) {
+            console.error("Error fetching recent quizzes:", quizError);
+          }
+        } else {
+          throw new Error("Document not found in response");
         }
       } catch (error) {
         console.error("Error fetching document:", error);
@@ -55,7 +89,10 @@ export const StudySession = () => {
         setLoading(false);
       }
     };
-    fetchDocument();
+    
+    if (documentId) {
+      fetchDocumentAndQuizzes();
+    }
   }, [documentId]);
 
   const handleTextSelect = async (text, pageNumber) => {
@@ -100,44 +137,64 @@ export const StudySession = () => {
     setShowTextPreview(false);
   };
 
-  const handleQuizGenerated = (quizConfig) => {
-    setCurrentQuiz(quizConfig);
-    setActiveTab(TABS.QUIZ);
+  const handleQuizGenerated = async (quizConfig) => {
+    setQuizLoading(true);
+    try {
+      // Generate a unique attempt ID for the new route
+      const attemptId = `attempt_${Date.now()}`;
+      const quizWithAttempt = {
+        ...quizConfig,
+        attemptId: attemptId,
+        documentId: documentId,
+        documentTitle: selectedDocument.title,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Store in localStorage for the new route to access
+      localStorage.setItem(`quiz_${attemptId}`, JSON.stringify(quizWithAttempt));
+      
+      // Navigate to the quiz attempt page
+      navigate(`/quiz/${documentId}/${attemptId}`);
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+    } finally {
+      setQuizLoading(false);
+    }
   };
 
-  const handleQuizComplete = (answers) => {
-    console.log("Quiz completed with answers:", answers);
-    setCurrentQuiz(null);
-    setActiveTab(TABS.CHAT);
-  };
-
-  const handleChatSessionCreated = (sessionId) => {
-    setChatSessionId(sessionId);
+  const handleAttemptQuiz = (quizId) => {
+    const attemptId = `attempt_${Date.now()}`;
+    const quizData = {
+      quizId: quizId,
+      documentId: documentId,
+      documentTitle: selectedDocument.title,
+      attemptId: attemptId,
+      timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem(`quiz_${attemptId}`, JSON.stringify(quizData));
+    navigate(`/quiz/${documentId}/${attemptId}?quizId=${quizId}`);
   };
 
   // Handle page navigation from chat interface
   const handlePageNavigate = (pageNumber) => {
     console.log(`Navigating to page ${pageNumber}`);
+    setSelectedPage(pageNumber);
     
     // Navigate to the specified page in PDF viewer
     if (pdfViewerRef.current && pdfViewerRef.current.goToPage) {
       pdfViewerRef.current.goToPage(pageNumber);
-    } else {
-      // Fallback: use the PDFViewer's internal method if available
-      const pdfViewer = document.querySelector('pdf-viewer');
-      if (pdfViewer && pdfViewer.goToPage) {
-        pdfViewer.goToPage(pageNumber);
-      } else {
-        // Last resort: trigger custom event
-        const event = new CustomEvent('pdfNavigateToPage', { 
-          detail: { pageNumber } 
-        });
-        window.dispatchEvent(event);
-      }
     }
-    
-    // Optional: Highlight that we're navigating
+  };
+
+  // Handle page highlighting from chat interface
+  const handlePageHighlight = (pageNumber) => {
+    console.log(`Highlighting page ${pageNumber}`);
     setSelectedPage(pageNumber);
+  };
+
+  const handleViewAllQuizzes = () => {
+    navigate(`/quizzes/${documentId}`);
   };
 
   if (loading) {
@@ -252,10 +309,7 @@ export const StudySession = () => {
             <PDFViewer 
               ref={pdfViewerRef}
               pdfUrl={selectedDocument.pdfUrl} 
-              pdfId={documentId}
               onTextSelect={handleTextSelect}
-              apiBaseUrl="http://localhost:5000"
-              currentPage={selectedPage}
             />
           </div>
         </div>
@@ -280,6 +334,9 @@ export const StudySession = () => {
             >
               <span className="tab-icon">🎯</span>
               <span className="tab-label">Quiz</span>
+              {quizLoading && (
+                <div className="quiz-loading-indicator"></div>
+              )}
             </button>
           </div>
 
@@ -290,31 +347,73 @@ export const StudySession = () => {
                 <ChatInterface 
                   documentId={documentId}
                   accessToken={localStorage.getItem('accessToken')}
-                  initialText={selectedText}
-                  selectedPage={selectedPage}
-                  onSessionCreated={handleChatSessionCreated}
                   onPageNavigate={handlePageNavigate}
-                  ref={(ref) => {
-                    if (ref) window.chatInterfaceRef = ref;
-                  }}
+                  onPageHighlight={handlePageHighlight}
                 />
               </div>
             )}
 
             {activeTab === TABS.QUIZ && (
               <div className="quiz-tab">
-                {currentQuiz ? (
-                  <QuizSession
-                    quiz={currentQuiz}
-                    onComplete={handleQuizComplete}
-                    documentTitle={selectedDocument.title}
-                  />
-                ) : (
-                  <QuizGenerator
-                    documentId={documentId}
-                    onQuizGenerated={handleQuizGenerated}
-                    documentTitle={selectedDocument.title}
-                  />
+                <QuizGenerator
+                  documentId={documentId}
+                  onQuizGenerated={handleQuizGenerated}
+                  documentTitle={selectedDocument.title}
+                  onViewAllQuizzes={handleViewAllQuizzes}
+                  isLoading={quizLoading}
+                />
+                
+                {/* Recent Quizzes Section */}
+                {recentQuizzes.length > 0 && (
+                  <div className="recent-quizzes-section">
+                    <div className="recent-quizzes-header">
+                      <span className="recent-quizzes-icon">📊</span>
+                      <h4>Recent Quizzes</h4>
+                    </div>
+                    <div className="recent-quizzes-list">
+                      {recentQuizzes.map((quiz) => (
+                        <div key={quiz._id} className="recent-quiz-item">
+                          <div className="quiz-info-main">
+                            <div className="quiz-type-badge">
+                              {quiz.quizType?.toUpperCase() || 'QUIZ'}
+                            </div>
+                            <div className="quiz-details">
+                              <span className="quiz-title">
+                                {quiz.title || `${quiz.quizType} Quiz`}
+                              </span>
+                              <span className="quiz-date">
+                                {new Date(quiz.createdAt || quiz.attemptedAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="quiz-actions">
+                            {quiz.isAttempted ? (
+                              <>
+                                <div className="score-display">
+                                  <span className={`score-badge ${quiz.score >= 80 ? 'score-high' : quiz.score >= 60 ? 'score-medium' : 'score-low'}`}>
+                                    {quiz.score}%
+                                  </span>
+                                </div>
+                                <button 
+                                  onClick={() => handleAttemptQuiz(quiz._id)}
+                                  className="reattempt-quiz-button"
+                                >
+                                  Reattempt
+                                </button>
+                              </>
+                            ) : (
+                              <button 
+                                onClick={() => handleAttemptQuiz(quiz._id)}
+                                className="attempt-quiz-button"
+                              >
+                                Attempt
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -347,6 +446,13 @@ export const StudySession = () => {
             >
               <span>🎯</span>
               Take Quiz
+            </button>
+            <button
+              onClick={handleViewAllQuizzes}
+              className="action-button"
+            >
+              <span>📊</span>
+              All Quizzes
             </button>
           </div>
         </div>

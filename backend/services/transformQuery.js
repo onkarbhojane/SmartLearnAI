@@ -22,8 +22,8 @@ async function transformQuery(question, chatMessages) {
     config: {
       systemInstruction: `
         You are a query rewriting expert.
-        Based on the chat history, rewrite the user's question into a standalone question.
-        Only output the rewritten question.
+        Rewrite the user's question into a standalone question.
+        Output ONLY the rewritten question.
       `,
     },
   });
@@ -35,41 +35,44 @@ export async function chatbotService(userId, pdfId, question) {
   try {
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
-    // Find the specific PDF material
+
     const pdf = user.study_materials.id(pdfId);
     if (!pdf) throw new Error("PDF not found for this user");
-    // console.log("PDF found:", pdf.title);
 
     const chatSession = pdf.chat_sessions[0] || { messages: [] };
     const chatMessages = chatSession.messages || [];
 
-    // Step 1: Rewrite question
+    // 1️⃣ Rewrite question
     const refinedQuestion = await transformQuery(question, chatMessages);
-    // console.log("Refined question:", refinedQuestion);
-    // Step 2: Create embeddings
+
+    // 2️⃣ Create embeddings
     const embeddings = new GoogleGenerativeAIEmbeddings({
       apiKey: process.env.GEMINI_API_KEY,
       model: "text-embedding-004",
     });
     const queryVector = await embeddings.embedQuery(refinedQuestion);
 
-    // console.log("Query vector:", queryVector);
-    // Step 3: Query Pinecone using RAG_id
+    // 3️⃣ Query Pinecone
     const pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
     const pineconeIndex = pinecone.Index(pdf.RAG_id);
 
     const searchResults = await pineconeIndex.query({
-      topK: 10,
+      topK: 5,
       vector: queryVector,
       includeMetadata: true,
     });
 
-    // console.log("Search results:", searchResults);
-    const context = searchResults.matches
-      .map((m) => m.metadata?.text || "")
-      .join("\n---\n");
+    // 🧠 Build context with citations
+    const contextParts = searchResults.matches.map((m, i) => {
+      const text = m.metadata?.text || m.metadata?.pageContent || "";
+      const page = m.metadata?.page || "Unknown";
+      const snippet = text.length > 250 ? text.slice(0, 250) + "..." : text;
+      return `Source ${i + 1} (Page ${page}): "${snippet}"`;
+    });
 
-    // Step 4: Generate answer
+    const context = contextParts.join("\n---\n");
+
+    // 4️⃣ Generate answer with citations
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
@@ -78,32 +81,31 @@ export async function chatbotService(userId, pdfId, question) {
           role: msg.role === "assistant" ? "model" : "user",
           parts: [{ text: msg.content }],
         })),
-        { role: "user", parts: [{ text: question }] },
+        {
+          role: "user",
+          parts: [
+            {
+              text: `
+Question: ${question}
+Use the following context snippets from the PDF to answer. 
+Cite the page numbers only like defination from [page 3].
+Context:
+${context}
+
+If you cannot find the answer, say:
+"I could not find the answer in the provided document."
+              `,
+            },
+          ],
+        },
       ],
-      config: {
-        systemInstruction: `
-          You are a helpful teacher.
-          Use ONLY the provided context.
-          If the answer isn't in context, say: "I could not find the answer in the provided document."
-          Be concise and educational.
-          Context: ${context}
-        `,
-      },
     });
 
     const answer = response.text.trim();
-    // console.log("Answer:", answer);
-    // Step 5: Save messages to DB
-    chatMessages.push({
-      role: "user",
-      content: question,
-    });
-    chatMessages.push({
-      role: "assistant",
-      content: answer,
-    });
 
-    // console.log("Chat messages:", chatMessages);
+    // 5️⃣ Append answer + citations to history
+    chatMessages.push({ role: "user", content: question });
+    chatMessages.push({ role: "assistant", content: answer });
 
     if (pdf.chat_sessions.length === 0) {
       pdf.chat_sessions.push({ messages: chatMessages });
@@ -111,10 +113,14 @@ export async function chatbotService(userId, pdfId, question) {
       pdf.chat_sessions[0].messages = chatMessages;
     }
 
-    // console.log("Updated chat sessions:", pdf.chat_sessions);
     await user.save();
 
-    return { refinedQuestion, answer, chatHistory: chatMessages };
+    return {
+      refinedQuestion,
+      answer,
+      chatHistory: chatMessages,
+      citations: contextParts, // optional: you can show these separately in frontend
+    };
   } catch (err) {
     console.error("❌ chatbotService error:", err);
     throw err;

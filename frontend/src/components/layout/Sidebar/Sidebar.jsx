@@ -4,7 +4,7 @@ import { ThemeSwitcher } from '../../common/ThemeToggle/ThemeToggle';
 import { useAuth } from '../../../contexts/AuthContext';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Study', href: '/study', icon: '📚' },
+  // { name: 'Study', href: '/do', icon: '📚' },
   { name: 'Documents', href: '/documents', icon: '📄' },
   { name: 'Progress', href: '/progress', icon: '📈' },
 ];

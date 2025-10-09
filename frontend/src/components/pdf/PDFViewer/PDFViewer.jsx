@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import './CleanPDFViewer.css';
 
-const PDFViewer = (props) => {
+const PDFViewer = forwardRef((props, ref) => {
   const [pdf, setPdf] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -9,17 +9,35 @@ const PDFViewer = (props) => {
   const [error, setError] = useState(null);
   const [selectedText, setSelectedText] = useState('');
   const canvasRef = useRef(null);
-  const textLayerRef = useRef(null);
   const containerRef = useRef(null);
-  const selectionContainerRef = useRef(null);
 
   const pdfUrl = props.pdfUrl;
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    goToPage: (pageNumber) => {
+      if (pageNumber >= 1 && pageNumber <= totalPages && pdf) {
+        setCurrentPage(pageNumber);
+        renderPage(pdf, pageNumber);
+      }
+    },
+    getCurrentPage: () => currentPage,
+    getTotalPages: () => totalPages
+  }));
 
   useEffect(() => {
     if (pdfUrl) {
       loadPDF();
     }
   }, [pdfUrl]);
+
+  // Add this useEffect to handle initial render when PDF is loaded
+  useEffect(() => {
+    if (pdf && currentPage === 1) {
+      console.log('PDF loaded, rendering first page');
+      renderPage(pdf, 1);
+    }
+  }, [pdf]);
 
   useEffect(() => {
     // Setup text selection handler
@@ -30,49 +48,32 @@ const PDFViewer = (props) => {
       if (selectedText && isSelectionInPDF(selection)) {
         setSelectedText(selectedText);
         
-        // Notify parent component about selected text
+        // Get current page number and notify parent
         if (props.onTextSelect) {
-          props.onTextSelect(selectedText);
+          props.onTextSelect(selectedText, currentPage);
         }
       }
     };
 
-    // Add event listeners for text selection
     document.addEventListener('selectionchange', handleTextSelection);
     
-    // Add copy event listener to enhance copy functionality
-    document.addEventListener('copy', handleCopy);
-
     return () => {
       document.removeEventListener('selectionchange', handleTextSelection);
-      document.removeEventListener('copy', handleCopy);
     };
-  }, [props.onTextSelect]);
+  }, [props.onTextSelect, currentPage]);
 
   const isSelectionInPDF = (selection) => {
     if (!selection.rangeCount) return false;
     
     const range = selection.getRangeAt(0);
-    const textLayer = textLayerRef.current;
+    const canvas = canvasRef.current;
     
-    if (!textLayer) return false;
+    if (!canvas) return false;
     
-    return textLayer.contains(range.commonAncestorContainer);
-  };
-
-  const handleCopy = (event) => {
-    if (selectedText) {
-      // Enhance clipboard data with the selected text
-      event.clipboardData.setData('text/plain', selectedText);
-      event.preventDefault();
-      
-      // Show feedback
-      showSelectionFeedback('Text copied to clipboard!');
-    }
+    return canvas.contains(range.commonAncestorContainer);
   };
 
   const showSelectionFeedback = (message) => {
-    // Create or update feedback element
     let feedback = document.getElementById('pdf-selection-feedback');
     if (!feedback) {
       feedback = document.createElement('div');
@@ -109,24 +110,32 @@ const PDFViewer = (props) => {
       setTotalPages(0);
       setSelectedText('');
 
-      console.log('Loading Cloudinary PDF from:', pdfUrl);
+      console.log('Loading PDF from:', pdfUrl);
 
-      // Import PDF.js with text layer
+      // Clear canvas while loading
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+        context.fillStyle = 'white';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Import PDF.js
       const pdfjs = await import('pdfjs-dist/build/pdf');
       const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
       pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-      const loadingTask = pdfjs.getDocument(pdfUrl);
+      const loadingTask = pdfjs.getDocument({
+        url: pdfUrl,
+        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.4.120/cmaps/',
+        cMapPacked: true,
+      });
       
       const pdfDocument = await loadingTask.promise;
       console.log('PDF loaded successfully, total pages:', pdfDocument.numPages);
       
       setPdf(pdfDocument);
       setTotalPages(pdfDocument.numPages);
-      
-      setTimeout(() => {
-        renderPage(pdfDocument, 1);
-      }, 100);
       
     } catch (err) {
       console.error('PDF loading error:', err);
@@ -138,98 +147,69 @@ const PDFViewer = (props) => {
 
   const renderPage = async (pdfDoc, pageNumber) => {
     try {
-      if (!canvasRef.current || !textLayerRef.current) {
-        console.error('Canvas or text layer not available yet');
-        setTimeout(() => renderPage(pdfDoc, pageNumber), 100);
+      if (!canvasRef.current) {
+        console.error('Canvas not available');
         return;
       }
 
       const page = await pdfDoc.getPage(pageNumber);
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      const textLayer = textLayerRef.current;
       
       if (!context) {
         throw new Error('Canvas context not available');
       }
 
-      // Clear any existing selection
+      // Clear selection
       setSelectedText('');
       const selection = window.getSelection();
       selection.removeAllRanges();
 
-      // Calculate scale
-      const container = containerRef.current || canvas.parentElement;
+      // Calculate scale with better logic
+      const container = containerRef.current;
       const containerWidth = container ? container.clientWidth - 40 : 800;
-      const pageViewport = page.getViewport({ scale: 1.0 });
-      const scale = Math.min((containerWidth / pageViewport.width), 1.5);
+      const viewport = page.getViewport({ scale: 1 });
       
-      const viewport = page.getViewport({ scale });
+      // Calculate scale to fit container width while maintaining aspect ratio
+      const calculatedScale = Math.min(
+        (containerWidth - 40) / viewport.width, // Subtract padding
+        1.5 // Maximum scale
+      );
       
-      // Set canvas dimensions
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+      const scaledViewport = page.getViewport({ scale: calculatedScale });
+      
+      // Set canvas dimensions with device pixel ratio for better quality
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(scaledViewport.width * devicePixelRatio);
+      canvas.height = Math.floor(scaledViewport.height * devicePixelRatio);
+      
+      // Set CSS dimensions
+      canvas.style.width = `${scaledViewport.width}px`;
+      canvas.style.height = `${scaledViewport.height}px`;
 
-      // Clear and set white background
+      // Scale the context for high DPI displays
+      context.scale(devicePixelRatio, devicePixelRatio);
+
+      // Clear canvas with white background
       context.fillStyle = 'white';
-      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillRect(0, 0, scaledViewport.width, scaledViewport.height);
 
-      console.log(`Rendering page ${pageNumber} at scale ${scale}`);
+      console.log(`Rendering page ${pageNumber} at scale ${calculatedScale}, dimensions: ${scaledViewport.width}x${scaledViewport.height}`);
 
-      // Render the page on canvas
-      await page.render({
+      // Render the page with better error handling
+      const renderContext = {
         canvasContext: context,
-        viewport: viewport
-      }).promise;
+        viewport: scaledViewport
+      };
 
-      // Render text layer for text selection
-      await renderTextLayer(page, viewport, textLayer);
+      await page.render(renderContext).promise;
+      
+      console.log(`Page ${pageNumber} rendered successfully`);
       
     } catch (err) {
       console.error('PDF rendering error:', err);
-      setError(`Failed to render page ${currentPage}: ${err.message}`);
+      setError(`Failed to render page ${pageNumber}: ${err.message}`);
     }
-  };
-
-  const renderTextLayer = async (page, viewport, textLayerDiv) => {
-    try {
-      // Import text layer renderer
-      const { TextLayerBuilder } = await import('pdfjs-dist/web/pdf_viewer');
-      
-      // Clear previous text layer
-      textLayerDiv.innerHTML = '';
-      
-      // Create new text layer
-      const textLayer = new TextLayerBuilder({
-        textLayerDiv: textLayerDiv,
-        pageIndex: page.pageNumber - 1,
-        viewport: viewport,
-      });
-      
-      // Get text content
-      const textContent = await page.getTextContent();
-      textLayer.setTextContent(textContent);
-      textLayer.render();
-      
-      // Enhance text layer for better selection
-      enhanceTextLayer(textLayerDiv);
-      
-    } catch (err) {
-      console.error('Text layer rendering error:', err);
-      // Don't throw error - text layer is optional
-    }
-  };
-
-  const enhanceTextLayer = (textLayerDiv) => {
-    // Add CSS classes for better text selection
-    textLayerDiv.classList.add('pdf-text-layer');
-    
-    // Make text selectable and improve selection appearance
-    const textElements = textLayerDiv.querySelectorAll('.textLayer > *');
-    textElements.forEach(element => {
-      element.style.userSelect = 'text';
-      element.style.cursor = 'text';
-    });
   };
 
   const nextPage = async () => {
@@ -271,12 +251,17 @@ const PDFViewer = (props) => {
     }
   };
 
-  const sendToChatbot = () => {
-    if (selectedText && props.onTextSelect) {
-      props.onTextSelect(selectedText);
-      showSelectionFeedback('Text sent to chatbot!');
-    }
-  };
+  // Add a resize handler to re-render on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (pdf && currentPage) {
+        renderPage(pdf, currentPage);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [pdf, currentPage]);
 
   if (!pdfUrl) {
     return (
@@ -290,7 +275,7 @@ const PDFViewer = (props) => {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading PDF document from Cloudinary...</p>
+        <p>Loading PDF document...</p>
       </div>
     );
   }
@@ -299,7 +284,7 @@ const PDFViewer = (props) => {
     return (
       <div className="error-container">
         <p>{error}</p>
-        <div style={{ display: 'flex', gap: '10px', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="error-actions">
           <button onClick={loadPDF} className="retry-button">
             Try Again
           </button>
@@ -315,7 +300,7 @@ const PDFViewer = (props) => {
   }
 
   return (
-    <div className="clean-pdf-container mb-5" ref={containerRef}>
+    <div className="clean-pdf-container" ref={containerRef}>
       <div className="pdf-controls">
         <button onClick={prevPage} disabled={currentPage <= 1} className="page-button">
           ‹ Previous
@@ -330,26 +315,19 @@ const PDFViewer = (props) => {
           Download
         </button>
         
-        {/* Text selection controls */}
         {selectedText && (
           <div className="selection-controls">
             <button onClick={copySelectedText} className="copy-button">
               Copy Text
             </button>
-            {props.onTextSelect && (
-              <button onClick={sendToChatbot} className="chatbot-button">
-                Send to Chatbot
-              </button>
-            )}
           </div>
         )}
       </div>
       
-      {/* Selected text preview */}
       {selectedText && (
         <div className="selected-text-preview">
           <div className="selected-text-header">
-            <span>Selected Text:</span>
+            <span>Selected Text (Page {currentPage}):</span>
             <button 
               onClick={() => setSelectedText('')} 
               className="clear-selection-button"
@@ -363,14 +341,17 @@ const PDFViewer = (props) => {
         </div>
       )}
       
-      <div className="pdf-canvas-container" ref={selectionContainerRef}>
+      <div className="pdf-canvas-container">
         <div className="pdf-page-wrapper">
-          <canvas ref={canvasRef} className="pdf-canvas" />
-          <div ref={textLayerRef} className="textLayer" />
+          <canvas 
+            ref={canvasRef} 
+            className="pdf-canvas"
+            style={{ cursor: 'text' }}
+          />
         </div>
       </div>
     </div>
   );
-};
+});
 
 export default PDFViewer;

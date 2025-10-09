@@ -20,7 +20,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.page-button, .download-button, .copy-button, .chatbot-button {
+.page-button, .download-button, .copy-button {
   padding: 8px 16px;
   border: 1px solid #ddd;
   background: white;
@@ -32,8 +32,7 @@
 
 .page-button:hover:not(:disabled), 
 .download-button:hover, 
-.copy-button:hover,
-.chatbot-button:hover {
+.copy-button:hover {
   background: #007bff;
   color: white;
   border-color: #007bff;
@@ -61,12 +60,6 @@
   background: #28a745;
   color: white;
   border-color: #28a745;
-}
-
-.chatbot-button {
-  background: #17a2b8;
-  color: white;
-  border-color: #17a2b8;
 }
 
 .selected-text-preview {
@@ -119,11 +112,9 @@
   border-radius: 6px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: relative;
 }
 
 .pdf-page-wrapper {
-  position: relative;
   display: inline-block;
 }
 
@@ -132,32 +123,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   max-width: 100%;
   height: auto;
-}
-
-.textLayer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  opacity: 0.2;
-  line-height: 1.0;
-  user-select: text;
-  pointer-events: auto;
-}
-
-.textLayer ::selection {
-  background: rgba(0, 0, 255, 0.3);
-}
-
-.textLayer > * {
-  color: transparent;
-  position: absolute;
-  white-space: pre;
   cursor: text;
-  transform-origin: 0% 0%;
-  user-select: text;
 }
 
 .loading-container, .error-container {
@@ -202,6 +168,13 @@
 .retry-button:hover, .download-button:hover, .direct-link:hover {
   background: #0056b3;
   border-color: #0056b3;
+}
+
+.error-actions {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Selection feedback animation */

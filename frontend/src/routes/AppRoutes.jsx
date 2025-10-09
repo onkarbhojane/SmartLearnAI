@@ -12,8 +12,9 @@ import Landing from "../pages/Landing/Landing";
 import { ForgotPassword } from "../pages/Auth/ForgotPassword";
 import { ResetPassword } from "../pages/Auth/ResetPassword";
 import { Profile } from "../pages/Profile/Profile";
-import Document from './../../../backend/models/document.model';
-
+import Document from "./../../../backend/models/document.model";
+import { QuizzesPage } from "../pages/Quizes/QuizzesPage";
+import { QuizAttempt } from "../components/quiz/QuizAttempt/QuizAttempt";
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
@@ -39,7 +40,7 @@ const AppRoutes = () => {
       {/* Landing Page - Public */}
       <Route path="/" element={<Landing />} />
 
-      {/* Auth Pages - Public */}
+      
       <Route
         path="/login"
         element={
@@ -48,7 +49,7 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
-      <Route
+      <Route 
         path="/register"
         element={
           <PublicRoute>
@@ -56,6 +57,7 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
+      
       <Route
         path="/forgot-password"
         element={
@@ -73,7 +75,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Protected Routes with Layout */}
       <Route
         path="/dashboard"
         element={
@@ -84,6 +85,12 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/quizzes/:documentId" element={<ProtectedRoute><Layout><QuizzesPage /></Layout></ProtectedRoute>} />
+      <Route 
+      path="/quiz/:documentId/:attemptId" 
+      element={<ProtectedRoute><QuizAttempt /></ProtectedRoute>} 
+      />
+
       <Route
         path="/study/:documentId"
         element={
@@ -125,7 +132,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Protected Route without Layout */}
       <Route
         path="/profile"
         element={
@@ -135,7 +141,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

@@ -1,4 +1,4 @@
-/* ChatInterface.css */
+/* src/components/chat/ChatInterface/ChatInterface.css */
 .chat-interface {
   display: flex;
   flex-direction: column;
@@ -85,7 +85,7 @@
   transform: scale(1.05);
 }
 
-/* Messages Container - Fixed Height with Scroll */
+/* Messages Container */
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -334,46 +334,6 @@
   font-size: 14px;
 }
 
-/* Citations */
-.citations-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.citations-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.citations-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.citation-item {
-  background: #f8fafc;
-  padding: 10px;
-  border-radius: 8px;
-  border-left: 3px solid #667eea;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.citation-page {
-  font-weight: 600;
-  color: #667eea;
-}
-
-.citation-content {
-  color: #475569;
-}
-
 /* Message Footer */
 .message-footer {
   display: flex;
@@ -537,33 +497,7 @@
   height: 1px;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .messages-container {
-    max-height: 50vh;
-  }
-  
-  .message-bubble {
-    max-width: 90%;
-  }
-  
-  .messages-list {
-    padding: 16px;
-  }
-  
-  .input-area {
-    padding: 16px;
-  }
-  
-  .quick-questions-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .chat-header {
-    padding: 12px 16px;
-  }
-}
-/* Markdown Styling for AI Responses */
+/* Markdown Styling */
 .markdown-paragraph {
   margin: 0 0 12px 0;
   line-height: 1.6;
@@ -674,135 +608,50 @@
   color: #475569;
 }
 
-.markdown-table-container {
-  margin: 16px 0;
-  overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.markdown-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-.markdown-table th {
-  background: #f8fafc;
-  padding: 12px;
-  text-align: left;
-  font-weight: 600;
-  color: #374151;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.markdown-table td {
-  padding: 12px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #374151;
-}
-
-.markdown-table tr:last-child td {
-  border-bottom: none;
-}
-
-.markdown-table tr:hover {
-  background: #f8fafc;
-}
-
-/* Ensure message text container handles markdown content properly */
-.message-text {
-  margin: 0;
-  line-height: 1.6;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-.assistant-message .message-text {
-  background: white;
-  color: #1e293b;
-  border-bottom-left-radius: 4px;
-  border: 1px solid #e2e8f0;
-  padding: 16px 20px;
-  border-radius: 20px;
-}
-
-/* Adjust message content for markdown */
-.message-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.user-message .message-content {
-  text-align: right;
-}
-/* Clickable page references and citations */
-.page-reference.clickable {
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: 4px;
-  padding: 2px 6px;
-  margin: 0 2px;
+/* Page Reference Styling */
+.page-reference {
+  background-color: #f8fafc;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: 0 1px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 600;
-  color: #667eea;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
+  color: inherit;
+  display: inline-block;
 }
 
-.page-reference.clickable:hover {
-  background: rgba(102, 126, 234, 0.2);
-  border-color: #667eea;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+.page-reference:hover {
+  background-color: #e2e8f0;
 }
 
-.page-reference.clickable:active {
-  transform: translateY(0);
+.page-reference-selected {
+  background-color: #e2e8f0;
 }
 
-.citation-item.clickable {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-left: 3px solid #667eea;
-}
-
-.citation-item.clickable:hover {
-  background: #f0f4ff;
-  transform: translateX(4px);
-  border-left-color: #4f46e5;
-}
-
-.citation-item.clickable .citation-page {
-  color: #4f46e5;
-  font-weight: 700;
-}
-
-/* Tooltip for clickable elements */
-.citation-item.clickable,
-.page-reference.clickable {
-  position: relative;
-}
-
-.citation-item.clickable::after,
-.page-reference.clickable::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1f2937;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 1000;
-}
-
-.citation-item.clickable:hover::after,
-.page-reference.clickable:hover::after {
-  opacity: 1;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .messages-container {
+    max-height: 50vh;
+  }
+  
+  .message-bubble {
+    max-width: 90%;
+  }
+  
+  .messages-list {
+    padding: 16px;
+  }
+  
+  .input-area {
+    padding: 16px;
+  }
+  
+  .quick-questions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chat-header {
+    padding: 12px 16px;
+  }
 }

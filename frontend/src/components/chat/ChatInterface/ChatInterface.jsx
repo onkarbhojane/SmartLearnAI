@@ -1,17 +1,24 @@
 // src/components/chat/ChatInterface/ChatInterface.jsx
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '../../common/UI/Button/Button';
-import axios from 'axios';
-import './ChatInterface.css';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import React, { useState, useRef, useEffect } from "react";
+import { Button } from "../../common/UI/Button/Button";
+import axios from "axios";
+import "./ChatInterface.css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
+export const ChatInterface = ({
+  documentId,
+  accessToken,
+  onPageNavigate,
+  onPageHighlight,
+}) => {
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedPage, setSelectedPage] = useState(null);
+  const [highlightedPages, setHighlightedPages] = useState(new Set());
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
@@ -20,12 +27,18 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
     fetchChatHistory();
   }, [documentId, accessToken]);
 
+  // Reset highlighting when document changes
+  useEffect(() => {
+    setSelectedPage(null);
+    setHighlightedPages(new Set());
+  }, [documentId]);
+
   const fetchChatHistory = async () => {
     if (!documentId) return;
-    
+
     setIsLoadingHistory(true);
     setError(null);
-    
+
     try {
       const response = await axios.get(
         `http://localhost:5000/api/chat/${documentId}/history`,
@@ -35,7 +48,7 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
           },
         }
       );
-      
+
       if (response.data.chatHistory && response.data.chatHistory.length > 0) {
         const formattedMessages = response.data.chatHistory.map((msg, idx) => ({
           id: msg._id || idx + Date.now(),
@@ -44,34 +57,86 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
           timestamp: new Date(msg.timestamp || Date.now()),
           citations: msg.citations || [],
         }));
+
         setMessages(formattedMessages);
+
+        // Extract all page numbers from citations and content for highlighting
+        const allPageNumbers = new Set();
+        formattedMessages.forEach((message) => {
+          // Extract from citations
+          if (message.citations && message.citations.length > 0) {
+            message.citations.forEach((citation) => {
+              if (citation.pageNumber) {
+                allPageNumbers.add(citation.pageNumber);
+              }
+            });
+          }
+
+          // Extract from content (page references like [page 7])
+          if (message.content && typeof message.content === "string") {
+            const pageRefRegex = /\[page\s+(\d+)\]/gi;
+            let match;
+            while ((match = pageRefRegex.exec(message.content)) !== null) {
+              const pageNumber = parseInt(match[1]);
+              allPageNumbers.add(pageNumber);
+            }
+          }
+        });
+
+        if (allPageNumbers.size > 0) {
+          setHighlightedPages(allPageNumbers);
+          // Set the first page as selected by default
+          const firstPage = Array.from(allPageNumbers)[0];
+          setSelectedPage(firstPage);
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch chat history:', error);
-      setError('Failed to load chat history');
+      console.error("Failed to fetch chat history:", error);
+      setError("Failed to load chat history");
     } finally {
       setIsLoadingHistory(false);
     }
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'end'
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
     });
   };
 
   useEffect(() => {
-    // Only auto-scroll to bottom if user is near the bottom
     if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const { scrollTop, scrollHeight, clientHeight } =
+        messagesContainerRef.current;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      
+
       if (isNearBottom) {
         scrollToBottom();
       }
     }
   }, [messages, isLoading]);
+
+  // Handle page navigation and highlighting
+  const handlePageNavigation = (pageNumber) => {
+    console.log("Navigating to page:", pageNumber);
+
+    // Update selected page
+    setSelectedPage(pageNumber);
+
+    // Add to highlighted pages if not already there
+    setHighlightedPages((prev) => new Set([...prev, pageNumber]));
+
+    // Call parent component's navigation function if provided
+    if (onPageNavigate) {
+      onPageNavigate(pageNumber);
+    }
+
+    // Call parent component's highlight function if provided
+    if (onPageHighlight) {
+      onPageHighlight(pageNumber);
+    }
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -79,15 +144,15 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
 
     // Add user's message locally immediately for better UX
     const userMessage = {
-      id: Date.now() + 'user',
-      role: 'user',
+      id: Date.now() + "user",
+      role: "user",
       content: inputMessage,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     const question = inputMessage;
-    setInputMessage('');
+    setInputMessage("");
     setIsLoading(true);
     setError(null);
 
@@ -101,8 +166,9 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
           },
         }
       );
-      
-      const { answer, chatHistory } = response.data;
+
+      const { answer, chatHistory, citations } = response.data;
+      console.log("AI Response:", answer);
 
       // Update chat messages with backend chatHistory
       const formattedMessages = chatHistory.map((msg, idx) => ({
@@ -113,18 +179,54 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
         citations: msg.citations || [],
       }));
 
+      console.log("Formatted messages:", response.data);
       setMessages(formattedMessages);
+
+      // Extract page numbers from citations and content for highlighting
+      const pageNumbers = new Set();
+
+      // From citations
+      if (citations && citations.length > 0) {
+        citations.forEach((citation) => {
+          if (citation.pageNumber) {
+            pageNumbers.add(citation.pageNumber);
+          }
+        });
+      }
+
+      // From answer content
+      if (answer && typeof answer === "string") {
+        const pageRefRegex = /\[page\s+(\d+)\]/gi;
+        let match;
+        while ((match = pageRefRegex.exec(answer)) !== null) {
+          const pageNumber = parseInt(match[1]);
+          pageNumbers.add(pageNumber);
+        }
+      }
+
+      if (pageNumbers.size > 0) {
+        setHighlightedPages((prev) => new Set([...prev, ...pageNumbers]));
+
+        // Set the first page as selected
+        const firstPage = Array.from(pageNumbers)[0];
+        setSelectedPage(firstPage);
+
+        // Also navigate to the first page
+        if (onPageNavigate) {
+          onPageNavigate(firstPage);
+        }
+      }
     } catch (error) {
-      console.error('Failed to fetch AI response:', error);
-      setError('Failed to get response from AI');
-      
+      console.error("Failed to fetch AI response:", error);
+      setError("Failed to get response from AI");
+
       // Add error message
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now() + 'error',
-          role: 'assistant',
-          content: '⚠️ Sorry, I encountered an error. Please try again.',
+          id: Date.now() + "error",
+          role: "assistant",
+          content: "⚠️ Sorry, I encountered an error. Please try again.",
           timestamp: new Date(),
           isError: true,
         },
@@ -136,22 +238,21 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
 
   const handleQuickQuestion = (question) => {
     setInputMessage(question);
-    // Focus on input after setting question
     setTimeout(() => {
-      const input = document.querySelector('.message-input');
+      const input = document.querySelector(".message-input");
       if (input) input.focus();
     }, 0);
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const clearChat = async () => {
-    if (window.confirm('Are you sure you want to clear this chat?')) {
+    if (window.confirm("Are you sure you want to clear this chat?")) {
       try {
         await axios.delete(
           `http://localhost:5000/api/chat/${documentId}/clear`,
@@ -162,41 +263,126 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
           }
         );
         setMessages([]);
+        setSelectedPage(null);
+        setHighlightedPages(new Set());
       } catch (error) {
-        console.error('Failed to clear chat:', error);
-        setError('Failed to clear chat history');
+        console.error("Failed to clear chat:", error);
+        setError("Failed to clear chat history");
       }
     }
   };
 
   const handleTextSelection = (text, pageNumber) => {
-    // This function can be called from parent component
     setInputMessage(`About this text from page ${pageNumber}: "${text}"`);
-    // Focus on input
     setTimeout(() => {
-      const input = document.querySelector('.message-input');
+      const input = document.querySelector(".message-input");
       if (input) input.focus();
     }, 0);
   };
 
-  // Handle page navigation when citation is clicked
-  const handleCitationClick = (pageNumber) => {
-    if (onPageNavigate && pageNumber) {
-      onPageNavigate(pageNumber);
+  // Function to check if a page should be highlighted
+  const isPageHighlighted = (pageNumber) => {
+    return highlightedPages.has(pageNumber);
+  };
+
+  // Function to process text and make page numbers clickable
+  const processTextWithPageLinks = (text) => {
+    if (!text) return text;
+
+    // Regex to match page references like [page 7], [page 10], etc. (case insensitive)
+    const pageRefRegex = /\[page\s+(\d+)\]/gi;
+
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = pageRefRegex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      const pageNumber = parseInt(match[1]);
+      const isHighlighted = isPageHighlighted(pageNumber);
+      const isSelected = selectedPage === pageNumber;
+
+      // Create clickable page reference - show "Page 7" instead of "[page 7]"
+      parts.push(
+        <span
+          key={match.index}
+          className={`page-reference clickable ${isHighlighted ? "page-reference-highlighted" : ""} ${isSelected ? "page-reference-selected" : ""}`}
+          onClick={() => handlePageNavigation(pageNumber)}
+          title={`Go to page ${pageNumber}`}
+        >
+          Page {pageNumber}
+        </span>
+      );
+
+      lastIndex = match.index + match[0].length;
     }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
   };
 
   // Custom components for ReactMarkdown with clickable page references
   const MarkdownComponents = {
-    p: ({ children }) => <p className="markdown-paragraph">{children}</p>,
-    h1: ({ children }) => <h1 className="markdown-heading markdown-h1">{children}</h1>,
-    h2: ({ children }) => <h2 className="markdown-heading markdown-h2">{children}</h2>,
-    h3: ({ children }) => <h3 className="markdown-heading markdown-h3">{children}</h3>,
-    h4: ({ children }) => <h4 className="markdown-heading markdown-h4">{children}</h4>,
-    ul: ({ children }) => <ul className="markdown-list markdown-ul">{children}</ul>,
-    ol: ({ children }) => <ol className="markdown-list markdown-ol">{children}</ol>,
-    li: ({ children }) => <li className="markdown-list-item">{children}</li>,
-    strong: ({ children }) => <strong className="markdown-strong">{children}</strong>,
+    p: ({ children }) => {
+      const processedChildren = React.Children.map(children, (child) => {
+        if (typeof child === "string") {
+          return processTextWithPageLinks(child);
+        }
+        // Handle arrays of strings (like from markdown parsing)
+        if (Array.isArray(child)) {
+          return child.map((item, index) =>
+            typeof item === "string" ? processTextWithPageLinks(item) : item
+          );
+        }
+        return child;
+      });
+
+      return <p className="markdown-paragraph">{processedChildren}</p>;
+    },
+    h1: ({ children }) => (
+      <h1 className="markdown-heading markdown-h1">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="markdown-heading markdown-h2">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="markdown-heading markdown-h3">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="markdown-heading markdown-h4">{children}</h4>
+    ),
+    ul: ({ children }) => (
+      <ul className="markdown-list markdown-ul">{children}</ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="markdown-list markdown-ol">{children}</ol>
+    ),
+    li: ({ children }) => {
+      const processedChildren = React.Children.map(children, (child) => {
+        if (typeof child === "string") {
+          return processTextWithPageLinks(child);
+        }
+        if (Array.isArray(child)) {
+          return child.map((item, index) =>
+            typeof item === "string" ? processTextWithPageLinks(item) : item
+          );
+        }
+        return child;
+      });
+
+      return <li className="markdown-list-item">{processedChildren}</li>;
+    },
+    strong: ({ children }) => (
+      <strong className="markdown-strong">{children}</strong>
+    ),
     em: ({ children }) => <em className="markdown-emphasis">{children}</em>,
     code: ({ children, className }) => {
       const isInline = !className;
@@ -217,59 +403,13 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
         <table className="markdown-table">{children}</table>
       </div>
     ),
-    // Custom component for page references like [Page X]
-    text: ({ children }) => {
-      const text = String(children);
-      // Match patterns like [Page X], [Page X-Y], [Pages X, Y, Z]
-      const pageRefRegex = /\[(?:Page|Pages?)\s+([\d,\s-]+)\]/gi;
-      
-      if (pageRefRegex.test(text)) {
-        const parts = [];
-        let lastIndex = 0;
-        pageRefRegex.lastIndex = 0; // Reset regex
-        
-        let match;
-        while ((match = pageRefRegex.exec(text)) !== null) {
-          // Add text before the match
-          if (match.index > lastIndex) {
-            parts.push(text.slice(lastIndex, match.index));
-          }
-          
-          // Extract page numbers from the match
-          const pageNumbers = match[1].split(/[,\s-]+/).filter(num => num.trim() !== '');
-          const firstPage = pageNumbers[0] ? parseInt(pageNumbers[0]) : null;
-          
-          // Create clickable page reference
-          parts.push(
-            <span
-              key={match.index}
-              className="page-reference clickable"
-              onClick={() => firstPage && handleCitationClick(firstPage)}
-              title={`Go to page ${firstPage}`}
-            >
-              {match[0]}
-            </span>
-          );
-          
-          lastIndex = match.index + match[0].length;
-        }
-        
-        // Add remaining text
-        if (lastIndex < text.length) {
-          parts.push(text.slice(lastIndex));
-        }
-        
-        return <>{parts}</>;
-      }
-      
-      return <>{children}</>;
-    }
   };
 
   // Expose function to parent component
   useEffect(() => {
     window.chatInterfaceRef = {
-      handleTextSelection
+      handleTextSelection,
+      handlePageNavigation,
     };
   }, []);
 
@@ -288,14 +428,14 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
             </div>
           </div>
           <div className="chat-actions">
-            <button 
+            <button
               className="action-btn refresh-btn"
               onClick={fetchChatHistory}
               title="Refresh chat"
             >
               🔄
             </button>
-            <button 
+            <button
               className="action-btn clear-btn"
               onClick={clearChat}
               title="Clear chat"
@@ -307,10 +447,7 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
       </div>
 
       {/* Messages Container with Fixed Height */}
-      <div 
-        ref={messagesContainerRef}
-        className="messages-container"
-      >
+      <div ref={messagesContainerRef} className="messages-container">
         {isLoadingHistory ? (
           <div className="loading-history">
             <div className="loading-spinner"></div>
@@ -324,40 +461,60 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
               </div>
               <h3 className="welcome-title">Welcome to AI Tutor!</h3>
               <p className="welcome-subtitle">
-                Ask me anything about your course material. I can explain concepts, 
-                help with homework, and test your understanding.
+                Ask me anything about your course material. I can explain
+                concepts, help with homework, and test your understanding.
               </p>
-              
+
               <div className="quick-questions">
                 <h4 className="quick-questions-title">Try asking:</h4>
                 <div className="quick-questions-grid">
                   <button
-                    onClick={() => handleQuickQuestion("Explain Newton's laws of motion")}
+                    onClick={() =>
+                      handleQuickQuestion("Explain Newton's laws of motion")
+                    }
                     className="quick-question-btn"
                   >
                     <span className="quick-question-emoji">🤔</span>
-                    <span className="quick-question-text">Explain Newton's laws of motion</span>
+                    <span className="quick-question-text">
+                      Explain Newton's laws of motion
+                    </span>
                   </button>
                   <button
-                    onClick={() => handleQuickQuestion("What are the key points from chapter 3?")}
+                    onClick={() =>
+                      handleQuickQuestion(
+                        "What are the key points from chapter 3?"
+                      )
+                    }
                     className="quick-question-btn"
                   >
                     <span className="quick-question-emoji">📖</span>
-                    <span className="quick-question-text">What are the key points from chapter 3?</span>
+                    <span className="quick-question-text">
+                      What are the key points from chapter 3?
+                    </span>
                   </button>
                   <button
-                    onClick={() => handleQuickQuestion("Give me a quiz about thermodynamics")}
+                    onClick={() =>
+                      handleQuickQuestion("Give me a quiz about thermodynamics")
+                    }
                     className="quick-question-btn"
                   >
                     <span className="quick-question-emoji">🎯</span>
-                    <span className="quick-question-text">Give me a quiz about thermodynamics</span>
+                    <span className="quick-question-text">
+                      Give me a quiz about thermodynamics
+                    </span>
                   </button>
                   <button
-                    onClick={() => handleQuickQuestion("Can you summarize the main concepts?")}
+                    onClick={() =>
+                      handleQuickQuestion(
+                        "Can you summarize the main concepts?"
+                      )
+                    }
                     className="quick-question-btn"
                   >
                     <span className="quick-question-emoji">📝</span>
-                    <span className="quick-question-text">Can you summarize the main concepts?</span>
+                    <span className="quick-question-text">
+                      Can you summarize the main concepts?
+                    </span>
                   </button>
                 </div>
               </div>
@@ -368,18 +525,18 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`message-wrapper ${message.role === 'user' ? 'user-message' : 'assistant-message'} ${message.isError ? 'error-message' : ''}`}
+                className={`message-wrapper ${message.role === "user" ? "user-message" : "assistant-message"} ${message.isError ? "error-message" : ""}`}
               >
                 <div className="message-bubble">
-                  {message.role === 'assistant' && (
+                  {message.role === "assistant" && (
                     <div className="assistant-avatar">
                       <span>🤖</span>
                     </div>
                   )}
-                  
+
                   <div className="message-content">
                     <div className="message-text">
-                      {message.role === 'assistant' ? (
+                      {message.role === "assistant" ? (
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={MarkdownComponents}
@@ -397,14 +554,21 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
                         <p className="citations-title">📚 Sources:</p>
                         <div className="citations-list">
                           {message.citations.map((citation, index) => (
-                            <div 
-                              key={index} 
-                              className="citation-item clickable"
-                              onClick={() => handleCitationClick(citation.pageNumber)}
+                            <div
+                              key={index}
+                              className={`citation-item clickable ${isPageHighlighted(citation.pageNumber) ? "citation-highlighted" : ""}`}
+                              onClick={() =>
+                                handlePageNavigation(citation.pageNumber)
+                              }
                               title={`Go to page ${citation.pageNumber}`}
                             >
-                              <span className="citation-page">Page {citation.pageNumber}:</span>
-                              <span className="citation-content"> {citation.content}</span>
+                              <span className="citation-page">
+                                Page {citation.pageNumber}:
+                              </span>
+                              <span className="citation-content">
+                                {" "}
+                                {citation.content}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -415,13 +579,13 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
                       <span className="message-time">
                         {formatTime(message.timestamp)}
                       </span>
-                      {message.role === 'assistant' && (
+                      {message.role === "assistant" && (
                         <span className="message-role">AI Tutor</span>
                       )}
                     </div>
                   </div>
 
-                  {message.role === 'user' && (
+                  {message.role === "user" && (
                     <div className="user-avatar">
                       <span>👤</span>
                     </div>
@@ -443,7 +607,9 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
                       <div className="typing-dot"></div>
                     </div>
                     <div className="message-footer">
-                      <span className="message-time">{formatTime(new Date())}</span>
+                      <span className="message-time">
+                        {formatTime(new Date())}
+                      </span>
                       <span className="message-role">AI Tutor</span>
                     </div>
                   </div>
@@ -458,10 +624,7 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
         {error && (
           <div className="error-banner">
             <span className="error-text">{error}</span>
-            <button 
-              className="error-dismiss"
-              onClick={() => setError(null)}
-            >
+            <button className="error-dismiss" onClick={() => setError(null)}>
               ×
             </button>
           </div>
@@ -475,33 +638,39 @@ export const ChatInterface = ({ documentId, accessToken, onPageNavigate }) => {
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Ask a question about your course material..."
+            placeholder="Ask a question..."
             className="message-input"
             disabled={isLoading}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage(e);
               }
             }}
           />
+
+          {/* Send Button */}
           <Button
             type="submit"
             disabled={!inputMessage.trim() || isLoading}
             className="send-button"
           >
-            {isLoading ? (
-              <div className="button-spinner"></div>
-            ) : (
-              'Send'
-            )}
+            {isLoading ? <div className="button-spinner"></div> : "Send"}
+          </Button>
+
+          {/* Summarize Page Button with Symbol */}
+          <Button
+            type="button"
+            className="summarize-button"
+            // onClick={handleSummarizePage}
+            // disabled={isLoading || !currentPage}
+          >
+            📝
           </Button>
         </div>
 
         <div className="input-footer">
-          <span className="disclaimer">
-            AI may make mistakes. Verify important information.
-          </span>
+          <span className="disclaimer">AI may make mistakes. Verify info.</span>
           <span className="shortcut-hint">Press Enter to send</span>
         </div>
       </form>
