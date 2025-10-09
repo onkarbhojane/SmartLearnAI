@@ -966,10 +966,10 @@ If you encounter issues not listed here:
 
 | Feature         | Metric               | Performance    |
 | --------------- | -------------------- | -------------- |
-| PDF Upload      | Time (10MB file)     | ~3-5 seconds   |
+| PDF Upload      | Time (10MB file)     | ~1-2 minutes   |
 | PDF Processing  | Chunking & Embedding | ~10-15 seconds |
 | Chat Response   | Average latency      | < 2 seconds    |
-| Quiz Generation | 10 questions         | ~5-8 seconds   |
+| Quiz Generation | 10 questions         | ~30-60 seconds   |
 | Vector Search   | Query time           | < 100ms        |
 | Page Load       | Initial load         | < 1 second     |
 | API Response    | Average              | < 500ms        |
