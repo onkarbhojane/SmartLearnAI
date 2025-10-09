@@ -1,5 +1,3 @@
-<img width="1511" height="882" alt="image" src="https://github.com/user-attachments/assets/9951c474-3150-4082-9726-a2f05c8d990b" /><div align="center">
-
 # 🎓 SmartRevision
 
 ### *AI-Powered Learning Companion for Students*
