@@ -1,4 +1,4 @@
-<div align="center">
+<img width="1511" height="882" alt="image" src="https://github.com/user-attachments/assets/9951c474-3150-4082-9726-a2f05c8d990b" /><div align="center">
 
 # 🎓 SmartRevision
 
@@ -617,7 +617,7 @@ Response: {
 
 #### Get All PDFs
 ```http
-GET /api/pdf/list
+GET /api/pdf/getDat
 Authorization: Bearer <access_token>
 
 Response: {
@@ -638,7 +638,7 @@ Response: {
 
 #### Send Message
 ```http
-POST /api/chat/message
+POST /api/chat/:documentId
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -684,7 +684,7 @@ Response: {
 
 #### Submit Quiz
 ```http
-POST /api/quiz/submit
+POST /api/quiz/:documentId
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -758,16 +758,21 @@ Powered by cutting-edge AI models:
 <div align="center">
 
 ### 🏠 Home Page
-![Home Page](https://via.placeholder.com/800x450/6366f1/ffffff?text=Home+Page)
+<img width="1906" height="916" alt="image" src="https://github.com/user-attachments/assets/be39b185-2269-4a45-ae11-d6a490a27a61" />
 
 ### 💬 Chat Interface
-![Chat Interface](https://via.placeholder.com/800x450/10b981/ffffff?text=Chat+Interface)
+<img width="813" height="799" alt="image" src="https://github.com/user-attachments/assets/3eafd2c7-5166-4743-bbbe-c0df4fa1cd1e" />
+<img width="770" height="569" alt="image" src="https://github.com/user-attachments/assets/50ee1edb-2f7c-4ce9-98f9-c230140880d3" />
+
 
 ### 📝 Quiz Taking
-![Quiz Interface](https://via.placeholder.com/800x450/f59e0b/ffffff?text=Quiz+Interface)
+<img width="1159" height="888" alt="image" src="https://github.com/user-attachments/assets/584ed0ee-7468-422c-870a-329311266dfa" />
+
+<img width="1511" height="882" alt="image" src="https://github.com/user-attachments/assets/3330917b-fc19-4961-be08-31d92527bfbe" />
 
 ### 📊 Dashboard Analytics
-![Dashboard](https://via.placeholder.com/800x450/8b5cf6/ffffff?text=Dashboard+Analytics)
+<img width="1874" height="902" alt="image" src="https://github.com/user-attachments/assets/857d2e7c-6ac1-4aa2-83e4-f6c0bcb5c26d" />
+
 
 </div>
 
@@ -961,6 +966,24 @@ If you encounter issues not listed here:
 
 ## 📊 Performance Benchmarks
 
-| Feature | Metric | Performance |
-|---------|--------|-------------|
-| PDF Upload | 
+| Feature         | Metric               | Performance    |
+| --------------- | -------------------- | -------------- |
+| PDF Upload      | Time (10MB file)     | ~3-5 seconds   |
+| PDF Processing  | Chunking & Embedding | ~10-15 seconds |
+| Chat Response   | Average latency      | < 2 seconds    |
+| Quiz Generation | 10 questions         | ~5-8 seconds   |
+| Vector Search   | Query time           | < 100ms        |
+| Page Load       | Initial load         | < 1 second     |
+| API Response    | Average              | < 500ms        |
+
+## 🧑‍💻 Authors
+
+- **Onkar Bhojane** – Full-Stack Developer, AI Integration  
+  - [GitHub](https://github.com/onkarbhojane)  
+  - [LinkedIn](https://www.linkedin.com/in/onkar-bhojane)
+
+## 📄 License
+
+This project is licensed under the **ISC License**.  
+See the [LICENSE](LICENSE) file for more details.
+
