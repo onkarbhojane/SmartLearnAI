@@ -1,4 +1,4 @@
-# 🎓 SmartRevision
+# 🎓 SmartLearnAI
 
 ### *AI-Powered Learning Companion for Students*
 
