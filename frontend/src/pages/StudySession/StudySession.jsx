@@ -23,6 +23,7 @@ export const StudySession = () => {
   const [showTextPreview, setShowTextPreview] = useState(false);
   const [recentQuizzes, setRecentQuizzes] = useState([]);
   const [quizLoading, setQuizLoading] = useState(false);
+  const [currentPage,setCurrentPage] = useState(1);
   const navigate = useNavigate();
   const pdfViewerRef = useRef(null);
 
@@ -310,6 +311,7 @@ export const StudySession = () => {
               ref={pdfViewerRef}
               pdfUrl={selectedDocument.pdfUrl} 
               onTextSelect={handleTextSelect}
+              setCurrentPage={setCurrentPage}
             />
           </div>
         </div>
@@ -349,6 +351,7 @@ export const StudySession = () => {
                   accessToken={localStorage.getItem('accessToken')}
                   onPageNavigate={handlePageNavigate}
                   onPageHighlight={handlePageHighlight}
+                  currentPage={currentPage}
                 />
               </div>
             )}

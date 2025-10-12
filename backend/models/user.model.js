@@ -118,6 +118,7 @@ const pdfMaterialSchema = new Schema({
     {
       pageNumber: Number,
       text: String,
+      summary: String,
     },
   ],
 });

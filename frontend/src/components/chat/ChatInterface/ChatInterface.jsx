@@ -11,13 +11,14 @@ export const ChatInterface = ({
   accessToken,
   onPageNavigate,
   onPageHighlight,
+  currentPage // Add currentPage prop to get the current page from parent
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPage, setSelectedPage] = useState(null);
+  const [selectedPage, setSelectedPage] = useState(1);
   const [highlightedPages, setHighlightedPages] = useState(new Set());
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -32,6 +33,7 @@ export const ChatInterface = ({
     setSelectedPage(null);
     setHighlightedPages(new Set());
   }, [documentId]);
+
 
   const fetchChatHistory = async () => {
     if (!documentId) return;
@@ -135,6 +137,57 @@ export const ChatInterface = ({
     // Call parent component's highlight function if provided
     if (onPageHighlight) {
       onPageHighlight(pageNumber);
+    }
+  };
+
+  // Fixed summary function that displays the summary in chat
+  const handleSummaryCurrentPage = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get(
+        `https://smartrevision.onrender.com/api/chat/${documentId}/${currentPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      const summary = response.data.summary;
+      console.log("Summary of current page:", summary);
+
+      // Create a summary message and add it to the chat
+      const summaryMessage = {
+        id: Date.now() + "summary",
+        role: "assistant",
+        content: `**Summary of Page ${currentPage}:**\n\n${summary}`,
+        timestamp: new Date(),
+        isSummary: true,
+        pageNumber: currentPage
+      };
+
+      setMessages(prev => [...prev, summaryMessage]);
+
+      // Add the page to highlighted pages
+      setHighlightedPages(prev => new Set([...prev, selectedPage]));
+
+    } catch (error) {
+      console.error("Error in getting the summary of current page:", error);
+      setError("Failed to get page summary");
+      
+      // Add error message to chat
+      const errorMessage = {
+        id: Date.now() + "error",
+        role: "assistant",
+        content: "⚠️ Sorry, I couldn't generate a summary for this page. Please try again.",
+        timestamp: new Date(),
+        isError: true,
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -525,7 +578,7 @@ export const ChatInterface = ({
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`message-wrapper ${message.role === "user" ? "user-message" : "assistant-message"} ${message.isError ? "error-message" : ""}`}
+                className={`message-wrapper ${message.role === "user" ? "user-message" : "assistant-message"} ${message.isError ? "error-message" : ""} ${message.isSummary ? "summary-message" : ""}`}
               >
                 <div className="message-bubble">
                   {message.role === "assistant" && (
@@ -547,6 +600,15 @@ export const ChatInterface = ({
                         message.content
                       )}
                     </div>
+
+                    {/* Show page number for summary messages */}
+                    {message.isSummary && message.pageNumber && (
+                      <div className="summary-source">
+                        <span className="summary-page-badge">
+                          📄 Page {message.pageNumber}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Citations */}
                     {message.citations && message.citations.length > 0 && (
@@ -580,7 +642,9 @@ export const ChatInterface = ({
                         {formatTime(message.timestamp)}
                       </span>
                       {message.role === "assistant" && (
-                        <span className="message-role">AI Tutor</span>
+                        <span className="message-role">
+                          {message.isSummary ? "AI Summary" : "AI Tutor"}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -658,12 +722,13 @@ export const ChatInterface = ({
             {isLoading ? <div className="button-spinner"></div> : "Send"}
           </Button>
 
-          {/* Summarize Page Button with Symbol */}
+          {/* Summarize Page Button */}
           <Button
             type="button"
             className="summarize-button"
-            // onClick={handleSummarizePage}
-            // disabled={isLoading || !currentPage}
+            onClick={handleSummaryCurrentPage}
+            disabled={isLoading || !selectedPage}
+            title={`Summarize page ${selectedPage}`}
           >
             📝
           </Button>
@@ -672,6 +737,9 @@ export const ChatInterface = ({
         <div className="input-footer">
           <span className="disclaimer">AI may make mistakes. Verify info.</span>
           <span className="shortcut-hint">Press Enter to send</span>
+          {selectedPage && (
+            <span className="current-page-hint">Current page: {selectedPage}</span>
+          )}
         </div>
       </form>
     </div>

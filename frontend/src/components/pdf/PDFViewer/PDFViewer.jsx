@@ -203,7 +203,7 @@ const PDFViewer = forwardRef((props, ref) => {
       };
 
       await page.render(renderContext).promise;
-      
+      props.setCurrentPage(pageNumber);
       console.log(`Page ${pageNumber} rendered successfully`);
       
     } catch (err) {
