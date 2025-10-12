@@ -169,15 +169,7 @@ OPENAI_API_KEY=your_openai_api_key_here_optional
 PINECONE_ENVIRONMENT=us-east-1
 PINECONE_API_KEY=your_pinecone_api_key_here
 PINECONE_INDEX_NAME=smartrevision-embeddings
-
-# Email Configuration (Optional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-
-# Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5173
+YOUTUBE_API_KEY=fecthing-pagewise-data
 ```
 
 **Step 4: Start Backend Server**
