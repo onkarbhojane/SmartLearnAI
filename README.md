@@ -4,13 +4,13 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://smart-revision-umber.vercel.app/)
 [![License](https://img.shields.io/badge/license-ISC-blue?style=for-the-badge)](LICENSE)
-[![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)](https://github.com/onkarbhojane/SmartRevision)
+[![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)](https://github.com/onkarbhojane/smartLearnAI)
 
 *Transform your study sessions with AI-driven quizzes, intelligent chatbot assistance, and RAG-powered answers from your coursebooks.*
 
-[🚀 Live Demo](https://smart-revision-umber.vercel.app/) • [📖 Documentation](#-features) • [🐛 Report Bug](https://github.com/onkarbhojane/SmartRevision/issues) • [✨ Request Feature](https://github.com/onkarbhojane/SmartRevision/issues)
+[🚀 Live Demo](https://smart-revision-umber.vercel.app/) • [📖 Documentation](#-features) • [🐛 Report Bug](https://github.com/onkarbhojane/smartLearnAI/issues) • [✨ Request Feature](https://github.com/onkarbhojane/smartLearnAI/issues)
 
-![SmartRevision Banner](https://via.placeholder.com/1200x400/6366f1/ffffff?text=SmartRevision+-+AI+Learning+Platform)
+![smartLearnAI Banner](https://via.placeholder.com/1200x400/6366f1/ffffff?text=smartLearnAI+-+AI+Learning+Platform)
 
 </div>
 
@@ -19,7 +19,7 @@
 ## 📋 Table of Contents
 
 - [✨ Features](#-features)
-- [🎯 Why SmartRevision?](#-why-smartrevision)
+- [🎯 Why smartLearnAI?](#-why-smartLearnAI)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Quick Start](#-quick-start)
 - [📖 Usage Guide](#-usage-guide)
@@ -43,10 +43,10 @@
 
 ---
 
-## 🎯 Why SmartRevision?
+## 🎯 Why smartLearnAI?
 
 ```
-Traditional Study          →          SmartRevision
+Traditional Study          →          smartLearnAI
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📖 Manual note-taking      →    🤖 AI-generated summaries
@@ -121,8 +121,8 @@ Before you begin, ensure you have the following installed:
 **Step 1: Clone the repository**
 
 ```bash
-git clone https://github.com/onkarbhojane/SmartRevision.git
-cd SmartRevision
+git clone https://github.com/onkarbhojane/smartLearnAI.git
+cd smartLearnAI
 ```
 
 **Step 2: Backend Setup**
@@ -168,7 +168,7 @@ OPENAI_API_KEY=your_openai_api_key_here_optional
 # Pinecone Configuration (Vector Database)
 PINECONE_ENVIRONMENT=us-east-1
 PINECONE_API_KEY=your_pinecone_api_key_here
-PINECONE_INDEX_NAME=smartrevision-embeddings
+PINECONE_INDEX_NAME=smartLearnAI-embeddings
 YOUTUBE_API_KEY=fecthing-pagewise-data
 ```
 
@@ -182,7 +182,7 @@ npm run dev
 npm start
 ```
 
-✅ Backend server should be running on `https://smartrevision.onrender.com`
+✅ Backend server should be running on `https://smartLearnAI.onrender.com`
 
 **Step 5: Frontend Setup** *(Open a new terminal)*
 
@@ -196,8 +196,8 @@ npm install
 Create `.env` in the `frontend` directory if you need custom configuration:
 
 ```env
-VITE_API_BASE_URL=https://smartrevision.onrender.com/api
-VITE_APP_NAME=SmartRevision
+VITE_API_BASE_URL=https://smartLearnAI.onrender.com/api
+VITE_APP_NAME=smartLearnAI
 ```
 
 **Step 7: Start Frontend Development Server**
@@ -210,7 +210,7 @@ npm run dev
 
 ### 🎉 Success!
 
-Open your browser and navigate to `http://localhost:5173` to see SmartRevision in action!
+Open your browser and navigate to `http://localhost:5173` to see smartLearnAI in action!
 
 ---
 
@@ -316,7 +316,7 @@ Track your learning progress with comprehensive analytics:
 ### Directory Structure
 
 ```
-SmartRevision/
+smartLearnAI/
 │
 ├── 📁 frontend/
 │   ├── public/
@@ -480,7 +480,7 @@ SmartRevision/
 ### Base URL
 
 ```
-https://smartrevision.onrender.com/api
+https://smartLearnAI.onrender.com/api
 ```
 
 ### Authentication Endpoints
@@ -651,7 +651,7 @@ Response: {
 
 ### 🧠 RAG (Retrieval-Augmented Generation)
 
-SmartRevision uses advanced RAG technology to provide accurate answers:
+smartLearnAI uses advanced RAG technology to provide accurate answers:
 
 1. **PDF Chunking**: Documents are split into semantic chunks
 2. **Embedding Generation**: Each chunk is converted to vector embeddings
@@ -778,7 +778,7 @@ Powered by cutting-edge AI models:
 
 ## 🤝 Contributing
 
-We love contributions! SmartRevision is an open-source project and we welcome contributions of all kinds.
+We love contributions! smartLearnAI is an open-source project and we welcome contributions of all kinds.
 
 ### How to Contribute
 
@@ -790,8 +790,8 @@ We love contributions! SmartRevision is an open-source project and we welcome co
 2. **📥 Clone Your Fork**
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/SmartRevision.git
-   cd SmartRevision
+   git clone https://github.com/YOUR_USERNAME/smartLearnAI.git
+   cd smartLearnAI
    ```
 3. **🌿 Create a Branch**
 
@@ -940,9 +940,9 @@ Error: Failed to generate quiz
 
 If you encounter issues not listed here:
 
-1. **Check Existing Issues**: [GitHub Issues](https://github.com/onkarbhojane/SmartRevision/issues)
+1. **Check Existing Issues**: [GitHub Issues](https://github.com/onkarbhojane/smartLearnAI/issues)
 2. **Create New Issue**: Provide detailed error messages and steps to reproduce
-3. **Join Discussions**: [GitHub Discussions](https://github.com/onkarbhojane/SmartRevision/discussions)
+3. **Join Discussions**: [GitHub Discussions](https://github.com/onkarbhojane/smartLearnAI/discussions)
 
 ---
 
